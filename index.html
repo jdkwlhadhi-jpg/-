@@ -37,8 +37,11 @@
     .tabs{display:flex;gap:8px;margin-bottom:10px}
     .tab{flex:1;text-align:center;padding:10px;border-radius:10px;background:#f6fbfc;cursor:pointer;font-weight:800;font-size:14px}
     .tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
-    .search-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-    .search-row input{flex:1;height:44px;padding:10px;border-radius:10px;border:1px solid #e6eef7}
+    /* search-row small and aligned near names */
+    .search-row{display:flex;gap:8px;align-items:center;margin:10px 0;padding:6px 0}
+    .search-row input{flex:1;height:40px;padding:8px 10px;border-radius:10px;border:1px solid #e6eef7;font-size:14px}
+    .search-row .clear{background:transparent;border:0;font-size:18px;cursor:pointer;padding:6px 8px;color:var(--muted)}
+    .search-row .search-note{font-size:13px;color:var(--muted);margin-right:6px}
     .add-form{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
     .field{display:flex;flex-direction:column;gap:6px}
     .field label{font-weight:800;font-size:13px}
@@ -112,26 +115,18 @@
       </div>
     </header>
 
-    <!-- الملخصات الآن واضحة وبخط أكبر أسفل الهيدر -->
     <main id="mainPanel" style="display:none;margin-top:12px">
       <div class="panel" aria-live="polite">
         <div class="totals-row" role="region" aria-label="ملخص المبالغ">
-
           <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات">
             <div class="totals-label">المتبقي الكلي</div>
             <div id="totalRemainingAll" class="totals-amount">0.00</div>
           </div>
-
         </div>
 
         <div class="tabs" role="tablist">
           <div id="tabActive" class="tab active" role="tab" tabindex="0">قيد التسديد</div>
           <div id="tabOverdue" class="tab" role="tab" tabindex="0">المتأخرون</div>
-        </div>
-
-        <div class="search-row">
-          <input id="search" placeholder="ابحث عن العميل، المنتج، تاريخ الاستحقاق، أو مبلغ..." aria-label="بحث" />
-          <button id="searchBtn" class="btn-ghost">بحث</button>
         </div>
 
         <div class="add-form">
@@ -167,6 +162,14 @@
           <div style="display:flex;justify-content:flex-end">
             <button id="btnAdd" class="btn">أضف</button>
           </div>
+        </div>
+
+        <!-- نقلنا حقل البحث مباشرة فوق القوائم وبجانب أسماء العناصر لتسهيل الوصول -->
+        <div class="search-row" aria-hidden="false" style="align-items:center">
+          <div class="search-note">بحث سريع (الاسم، المنتج، تاريخ، أو مبلغ):</div>
+          <input id="search" placeholder="اكتب للبحث — أمثلة: سارة، هاتف، 2025-12-01، 1500" aria-label="بحث سريع" />
+          <button id="clearSearch" class="clear" title="مسح البحث">×</button>
+          <button id="searchBtn" class="btn-ghost" title="بحث">بحث</button>
         </div>
 
         <div style="margin-top:12px">
@@ -349,7 +352,6 @@
 
     // Match a record against tokens.
     // For each token, at least one field must include it.
-    // Fields searched: customerName, productName, dueDate, totalAmount, officialPrice, downPayment, remaining
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
       const fields = {
@@ -475,7 +477,6 @@
         totalRemaining += remaining;
       });
 
-      // Put the formatted numbers in the big panel badges
       if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
     }
 
@@ -766,10 +767,11 @@
     // initial
     renderLists();
 
-    // Improved search interactions: debounce + button
+    // Improved search interactions: debounce + button + clear
     const debouncedRender = debounce(renderLists, 240);
     $('search').addEventListener('input', debouncedRender);
     $('searchBtn').addEventListener('click', renderLists);
+    $('clearSearch').addEventListener('click', ()=>{ $('search').value=''; renderLists(); $('search').focus(); });
 
     window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
     document.querySelectorAll('.backdrop').forEach(b => b.addEventListener('click', (e)=> e.stopPropagation()));
@@ -777,4 +779,4 @@
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
 </body>
-  </html>
+</html>
