@@ -37,11 +37,9 @@
     .tabs{display:flex;gap:8px;margin-bottom:10px}
     .tab{flex:1;text-align:center;padding:10px;border-radius:10px;background:#f6fbfc;cursor:pointer;font-weight:800;font-size:14px}
     .tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
-    /* search-row small and aligned near names */
-    .search-row{display:flex;gap:8px;align-items:center;margin:10px 0;padding:6px 0}
-    .search-row input{flex:1;height:40px;padding:8px 10px;border-radius:10px;border:1px solid #e6eef7;font-size:14px}
-    .search-row .clear{background:transparent;border:0;font-size:18px;cursor:pointer;padding:6px 8px;color:var(--muted)}
-    .search-row .search-note{font-size:13px;color:var(--muted);margin-right:6px}
+    .search-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
+    /* Search input made slightly smaller as requested */
+    .search-row input{flex:1;height:40px;padding:8px;border-radius:10px;border:1px solid #e6eef7;max-width:420px}
     .add-form{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
     .field{display:flex;flex-direction:column;gap:6px}
     .field label{font-weight:800;font-size:13px}
@@ -115,18 +113,26 @@
       </div>
     </header>
 
+    <!-- الملخصات الآن واضحة وبخط أكبر أسفل الهيدر -->
     <main id="mainPanel" style="display:none;margin-top:12px">
       <div class="panel" aria-live="polite">
         <div class="totals-row" role="region" aria-label="ملخص المبالغ">
+
           <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات">
             <div class="totals-label">المتبقي الكلي</div>
             <div id="totalRemainingAll" class="totals-amount">0.00</div>
           </div>
+
         </div>
 
         <div class="tabs" role="tablist">
           <div id="tabActive" class="tab active" role="tab" tabindex="0">قيد التسديد</div>
           <div id="tabOverdue" class="tab" role="tab" tabindex="0">المتأخرون</div>
+        </div>
+
+        <div class="search-row">
+          <input id="search" placeholder="ابحث عن اسم العميل..." aria-label="بحث عن اسم العميل" />
+          <button id="searchBtn" class="btn-ghost">بحث</button>
         </div>
 
         <div class="add-form">
@@ -162,14 +168,6 @@
           <div style="display:flex;justify-content:flex-end">
             <button id="btnAdd" class="btn">أضف</button>
           </div>
-        </div>
-
-        <!-- نقلنا حقل البحث مباشرة فوق القوائم وبجانب أسماء العناصر لتسهيل الوصول -->
-        <div class="search-row" aria-hidden="false" style="align-items:center">
-          <div class="search-note">بحث سريع (الاسم، المنتج، تاريخ، أو مبلغ):</div>
-          <input id="search" placeholder="اكتب للبحث — أمثلة: سارة، هاتف، 2025-12-01، 1500" aria-label="بحث سريع" />
-          <button id="clearSearch" class="clear" title="مسح البحث">×</button>
-          <button id="searchBtn" class="btn-ghost" title="بحث">بحث</button>
         </div>
 
         <div style="margin-top:12px">
@@ -324,9 +322,6 @@
     function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function genId(){ try{return (crypto && crypto.randomUUID)?crypto.randomUUID():'r_'+Date.now()+'_'+Math.floor(Math.random()*1000000)}catch(e){return 'r_'+Date.now()} }
 
-    // --- Improved search helpers ---
-    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
     // Normalize Arabic text for robust matching: remove tashkeel, normalize alef/ya/ta-marbuTa etc.
     function normalizeText(s){
       if(!s) return '';
@@ -336,7 +331,7 @@
         .replace(/ى/g,'ي')
         .replace(/ؤ/g,'و')
         .replace(/ئ/g,'ي')
-        .replace(/ة/g,'ه')
+        // keep ة as-is (do not convert to ه)
         .replace(/ـ/g,'')
         .replace(/\s+/g,' ');
     }
@@ -346,51 +341,19 @@
       return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean);
     }
 
-    function isNumericToken(t){
-      return /\d/.test(t);
-    }
-
     // Match a record against tokens.
-    // For each token, at least one field must include it.
+    // Requirement now: search should match customer name only.
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
-      const fields = {
-        customer: normalizeText(record.customerName || ''),
-        product: normalizeText(record.productName || ''),
-        due: (record.dueDate||'').toLowerCase(),
-        total: String(Number(record.totalAmount||0)),
-        official: String(Number(record.officialPrice||0)),
-        down: String(Number(record.downPayment||0))
-      };
-      // remaining value (numeric)
-      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
-      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
-      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-      fields.remaining = String(remaining);
-
-      return tokens.every(token=>{
-        if(isNumericToken(token)){
-          // numeric-ish token: check numeric fields (formatted or raw)
-          if(fields.total.includes(token)) return true;
-          if(fields.official.includes(token)) return true;
-          if(fields.down.includes(token)) return true;
-          if(fields.remaining.includes(token)) return true;
-          // also match if token equals date parts (YYYY or MM or DD) in dueDate
-          if(fields.due.includes(token)) return true;
-          return false;
-        } else {
-          // textual token: check customer and product and due (as-is)
-          if(fields.customer.indexOf(token) !== -1) return true;
-          if(fields.product.indexOf(token) !== -1) return true;
-          if(fields.due.indexOf(token) !== -1) return true;
-          return false;
-        }
-      });
+      const customer = normalizeText(record.customerName || '');
+      return tokens.every(token => customer.indexOf(token) !== -1);
     }
 
     // Optionally highlight matches in displayed strings (simple, token-based)
     function highlightText(original, tokens){
       if(!original || !tokens || tokens.length===0) return original;
+      // For highlighting we operate on the original text but use normalized tokens.
+      // Build naive highlights by matching token substrings case-insensitively.
       let out = original;
       tokens.forEach(token=>{
         try{
@@ -402,6 +365,8 @@
       return out;
     }
 
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
     // Debounce utility
     function debounce(fn, wait){
       let h = null;
@@ -410,7 +375,6 @@
         h = setTimeout(()=>{ fn.apply(this,args); h=null; }, wait);
       };
     }
-    // --- end search helpers ---
 
     // Local state & sync
     const KEY='debt_app_v_mobile';
@@ -477,10 +441,11 @@
         totalRemaining += remaining;
       });
 
+      // Put the formatted numbers in the big panel badges
       if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
     }
 
-    // Render lists and recalc totals (now using improved search)
+    // Render lists and recalc totals (search only by customer name)
     function renderLists(){
       const q = ($('search').value||'').trim();
       const tokens = getSearchTokens(q);
@@ -492,10 +457,10 @@
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-        // Highlight customer/product matches (basic)
+        // Highlight customer matches (basic)
         const tokensForHighlight = tokens.slice();
         const nameHtml = highlightText(r.customerName || '', tokensForHighlight);
-        const prodHtml = highlightText(r.productName || '', tokensForHighlight);
+        const prodHtml = r.productName || '';
 
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
@@ -528,7 +493,7 @@
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
         const nameHtml = highlightText(r.customerName || '', getSearchTokens($('search').value||''));
-        const prodHtml = highlightText(r.productName || '', getSearchTokens($('search').value||''));
+        const prodHtml = r.productName || '';
 
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
@@ -582,8 +547,6 @@
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim(), prod = $('prodName').value.trim();
-      // ملاحظة: أسماء الحقول الداخلية لم تتغير (totalAmt, officialPrice).
-      // تم تبادل التسميات فقط في الواجهة حسب طلبك.
       const total = parseFloat($('totalAmt').value), down = parseFloat($('downAmt').value||0), due = $('dueDate').value || null;
       const official = parseFloat($('officialPrice').value||0) || 0;
       if(!cust || !prod || isNaN(total) || total <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
@@ -605,7 +568,6 @@
       $('d_due').textContent = r.dueDate || '-';
       $('d_total').textContent = formatMoney(r.totalAmount);
       $('d_down').textContent = formatMoney(r.downPayment||0);
-      // d_official الآن معنون "نقد" في الواجهة (تم التبديل)
       $('d_official').textContent = r.officialPrice ? formatMoney(r.officialPrice) : '-';
       const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
       const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
@@ -767,11 +729,10 @@
     // initial
     renderLists();
 
-    // Improved search interactions: debounce + button + clear
+    // Search interactions: debounce + button
     const debouncedRender = debounce(renderLists, 240);
     $('search').addEventListener('input', debouncedRender);
     $('searchBtn').addEventListener('click', renderLists);
-    $('clearSearch').addEventListener('click', ()=>{ $('search').value=''; renderLists(); $('search').focus(); });
 
     window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
     document.querySelectorAll('.backdrop').forEach(b => b.addEventListener('click', (e)=> e.stopPropagation()));
@@ -779,4 +740,4 @@
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
 </body>
-</html>
+          </html>
