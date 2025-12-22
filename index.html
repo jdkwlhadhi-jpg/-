@@ -83,6 +83,7 @@
     .totals-amount{font-size:20px;font-weight:900;color:#06202a}
     .totals-amount.profit-positive{color:var(--success)}
     .totals-amount.profit-negative{color:var(--danger)}
+    mark{background:rgba(255,235,59,0.45);padding:0 2px;border-radius:2px}
     @media(min-width:720px){
       header{padding:16px}
       .logo{width:56px;height:56px}
@@ -115,25 +116,12 @@
     <main id="mainPanel" style="display:none;margin-top:12px">
       <div class="panel" aria-live="polite">
         <div class="totals-row" role="region" aria-label="ملخص المبالغ">
-          <div class="totals-badge" title="إجمالي المبلغ الكلي لجميع السجلات">
-            <div class="totals-label">المبلغ الكلي (جميع الأشخاص)</div>
-            <div id="totalAllPanel" class="totals-amount">0.00</div>
-          </div>
 
           <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات">
             <div class="totals-label">المتبقي الكلي</div>
             <div id="totalRemainingAll" class="totals-amount">0.00</div>
           </div>
 
-          <div class="totals-badge" title="إجمالي الأسعار الرسمية">
-            <div class="totals-label">إجمالي الأسعار الرسمية</div>
-            <div id="totalOfficialAll" class="totals-amount">0.00</div>
-          </div>
-
-          <div class="totals-badge" title="إجمالي الربح (المبلغ الكلي - السعر الرسمي)">
-            <div class="totals-label">الربح الكلي</div>
-            <div id="totalProfitAll" class="totals-amount">0.00</div>
-          </div>
         </div>
 
         <div class="tabs" role="tablist">
@@ -142,7 +130,7 @@
         </div>
 
         <div class="search-row">
-          <input id="search" placeholder="ابحث عن العميل أو المنتج..." aria-label="بحث" />
+          <input id="search" placeholder="ابحث عن العميل، المنتج، تاريخ الاستحقاق، أو مبلغ..." aria-label="بحث" />
           <button id="searchBtn" class="btn-ghost">بحث</button>
         </div>
 
@@ -155,14 +143,15 @@
             <label for="prodName">اسم المنتج</label>
             <input id="prodName" placeholder="اسم المنتج" />
           </div>
+
           <div class="field">
-            <label for="totalAmt">المبلغ الكلي (بالأقساط)</label>
-            <input id="totalAmt" class="large" type="number" placeholder="المبلغ الكلي" />
+            <label for="totalAmt">أقساط</label>
+            <input id="totalAmt" class="large" type="number" placeholder="قيمة الأقساط" />
           </div>
 
           <div class="field">
-            <label for="officialPrice">السعر الرسمي للمنتج (بدون أقساط)</label>
-            <input id="officialPrice" type="number" placeholder="السعر الرسمي" />
+            <label for="officialPrice">نقد</label>
+            <input id="officialPrice" type="number" placeholder="المبلغ" />
           </div>
 
           <div class="field">
@@ -209,7 +198,7 @@
           <div class="muted-small" style="margin-top:10px">المبلغ الكلي</div><div id="d_total" style="font-weight:900;margin-top:6px"></div>
           <div class="muted-small" style="margin-top:10px">الدفعة المقدمة</div><div id="d_down" style="margin-top:6px"></div>
 
-          <div class="muted-small" style="margin-top:10px">السعر الرسمي للمنتج (بدون أقساط)</div>
+          <div class="muted-small" style="margin-top:10px">نقد</div>
           <div id="d_official" style="margin-top:6px;font-weight:900"></div>
 
           <div class="muted-small" style="margin-top:10px">المتبقي</div><div id="d_remaining" style="font-weight:900;margin-top:6px;color:var(--danger)"></div>
@@ -332,6 +321,95 @@
     function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function genId(){ try{return (crypto && crypto.randomUUID)?crypto.randomUUID():'r_'+Date.now()+'_'+Math.floor(Math.random()*1000000)}catch(e){return 'r_'+Date.now()} }
 
+    // --- Improved search helpers ---
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // Normalize Arabic text for robust matching: remove tashkeel, normalize alef/ya/ta-marbuTa etc.
+    function normalizeText(s){
+      if(!s) return '';
+      return s.toString().toLowerCase().trim()
+        .replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g,'') // remove diacritics
+        .replace(/[أإآ]/g,'ا')
+        .replace(/ى/g,'ي')
+        .replace(/ؤ/g,'و')
+        .replace(/ئ/g,'ي')
+        .replace(/ة/g,'ه')
+        .replace(/ـ/g,'')
+        .replace(/\s+/g,' ');
+    }
+
+    function getSearchTokens(q){
+      if(!q) return [];
+      return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean);
+    }
+
+    function isNumericToken(t){
+      return /\d/.test(t);
+    }
+
+    // Match a record against tokens.
+    // For each token, at least one field must include it.
+    // Fields searched: customerName, productName, dueDate, totalAmount, officialPrice, downPayment, remaining
+    function recordMatches(record, tokens){
+      if(!tokens || tokens.length===0) return true;
+      const fields = {
+        customer: normalizeText(record.customerName || ''),
+        product: normalizeText(record.productName || ''),
+        due: (record.dueDate||'').toLowerCase(),
+        total: String(Number(record.totalAmount||0)),
+        official: String(Number(record.officialPrice||0)),
+        down: String(Number(record.downPayment||0))
+      };
+      // remaining value (numeric)
+      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
+      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
+      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+      fields.remaining = String(remaining);
+
+      return tokens.every(token=>{
+        if(isNumericToken(token)){
+          // numeric-ish token: check numeric fields (formatted or raw)
+          if(fields.total.includes(token)) return true;
+          if(fields.official.includes(token)) return true;
+          if(fields.down.includes(token)) return true;
+          if(fields.remaining.includes(token)) return true;
+          // also match if token equals date parts (YYYY or MM or DD) in dueDate
+          if(fields.due.includes(token)) return true;
+          return false;
+        } else {
+          // textual token: check customer and product and due (as-is)
+          if(fields.customer.indexOf(token) !== -1) return true;
+          if(fields.product.indexOf(token) !== -1) return true;
+          if(fields.due.indexOf(token) !== -1) return true;
+          return false;
+        }
+      });
+    }
+
+    // Optionally highlight matches in displayed strings (simple, token-based)
+    function highlightText(original, tokens){
+      if(!original || !tokens || tokens.length===0) return original;
+      let out = original;
+      tokens.forEach(token=>{
+        try{
+          if(!token) return;
+          const re = new RegExp(escapeRegExp(token), 'ig');
+          out = out.replace(re, m => `<mark>${m}</mark>`);
+        }catch(e){}
+      });
+      return out;
+    }
+
+    // Debounce utility
+    function debounce(fn, wait){
+      let h = null;
+      return function(...args){
+        if(h) clearTimeout(h);
+        h = setTimeout(()=>{ fn.apply(this,args); h=null; }, wait);
+      };
+    }
+    // --- end search helpers ---
+
     // Local state & sync
     const KEY='debt_app_v_mobile';
     function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
@@ -385,64 +463,45 @@
       return diff >= 30 && remaining > 0;
     }
 
-    // Update totals and make amounts prominent; color profit
+    // Update totals and make amounts prominent
     function updateTotals(){
-      let totalAll = 0;
       let totalRemaining = 0;
-      let totalOfficial = 0;
-      let totalProfit = 0;
       (records||[]).forEach(r=>{
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
         const totalAmount = Number(r.totalAmount||0);
         const down = Number(r.downPayment||0);
         const principal = Math.max(0, totalAmount - down);
         const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-        totalAll += totalAmount;
         totalRemaining += remaining;
-        const official = Number(r.officialPrice||0);
-        totalOfficial += official;
-        const profitPer = totalAmount - official;
-        totalProfit += profitPer;
       });
 
       // Put the formatted numbers in the big panel badges
-      if($('totalAllPanel')) $('totalAllPanel').textContent = formatMoney(totalAll);
       if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
-      if($('totalOfficialAll')) $('totalOfficialAll').textContent = formatMoney(totalOfficial);
-      if($('totalProfitAll')){
-        const el = $('totalProfitAll');
-        el.textContent = formatMoney(totalProfit);
-        el.classList.remove('profit-positive','profit-negative');
-        if(totalProfit >= 0) el.classList.add('profit-positive'); else el.classList.add('profit-negative');
-      }
-
-      // Also update header small badges if present (backwards compatibility)
-      if($('headerTotalAll')) $('headerTotalAll').textContent = formatMoney(totalAll);
-      if($('headerTotalRemaining')) $('headerTotalRemaining').textContent = formatMoney(totalRemaining);
-      if($('headerTotalProfit')){
-        const h = $('headerTotalProfit');
-        h.textContent = formatMoney(totalProfit);
-        h.classList.remove('profit-positive','profit-negative');
-        if(totalProfit >= 0) h.classList.add('profit-positive'); else h.classList.add('profit-negative');
-      }
     }
 
-    // Render lists and recalc totals
+    // Render lists and recalc totals (now using improved search)
     function renderLists(){
-      const q = ($('search').value||'').toLowerCase();
+      const q = ($('search').value||'').trim();
+      const tokens = getSearchTokens(q);
+
       const activeList = $('listActive'); activeList.innerHTML='';
-      const activeArr = (records||[]).filter(r=> !isOverdueBy30(r) && ((r.customerName||'').toLowerCase().includes(q) || (r.productName||'').toLowerCase().includes(q)));
+      const activeArr = (records||[]).filter(r=> !isOverdueBy30(r) && recordMatches(r, tokens));
       $('emptyActive').style.display = activeArr.length ? 'none':'block';
       activeArr.forEach(r=>{
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
+        // Highlight customer/product matches (basic)
+        const tokensForHighlight = tokens.slice();
+        const nameHtml = highlightText(r.customerName || '', tokensForHighlight);
+        const prodHtml = highlightText(r.productName || '', tokensForHighlight);
+
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
             <div class="avatar">${(r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
             <div class="meta">
-              <div class="name">${r.customerName}</div>
-              <div class="product">${r.productName} ${r.officialPrice?(' — السعر الرسمي: '+formatMoney(r.officialPrice)):''}</div>
+              <div class="name">${nameHtml}</div>
+              <div class="product">${prodHtml} ${r.officialPrice?(' — نقد: '+formatMoney(r.officialPrice)):''}</div>
               <div class="due-label">تاريخ الاستحقاق</div>
               <div class="due-large">${r.dueDate||'-'}</div>
             </div>
@@ -461,18 +520,21 @@
       });
 
       const overdueList = $('listOverdue'); overdueList.innerHTML='';
-      const overdueArr = (records||[]).filter(r=> isOverdueBy30(r) && ((r.customerName||'').toLowerCase().includes(q) || (r.productName||'').toLowerCase().includes(q)));
+      const overdueArr = (records||[]).filter(r=> isOverdueBy30(r) && recordMatches(r, tokens));
       $('emptyOverdue').style.display = overdueArr.length ? 'none':'block';
       overdueArr.forEach(r=>{
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
+        const nameHtml = highlightText(r.customerName || '', getSearchTokens($('search').value||''));
+        const prodHtml = highlightText(r.productName || '', getSearchTokens($('search').value||''));
+
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
             <div class="avatar" style="background:linear-gradient(135deg,#ff7a7a,#ff4d4d)">${(r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
             <div class="meta">
-              <div class="name" style="color:var(--danger)">${r.customerName}</div>
-              <div class="product">${r.productName} ${r.officialPrice?(' — السعر الرسمي: '+formatMoney(r.officialPrice)):''}</div>
+              <div class="name" style="color:var(--danger)">${nameHtml}</div>
+              <div class="product">${prodHtml} ${r.officialPrice?(' — نقد: '+formatMoney(r.officialPrice)):''}</div>
               <div class="due-label">تاريخ الاستحقاق</div>
               <div class="due-large">${r.dueDate||'-'}</div>
             </div>
@@ -519,6 +581,8 @@
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim(), prod = $('prodName').value.trim();
+      // ملاحظة: أسماء الحقول الداخلية لم تتغير (totalAmt, officialPrice).
+      // تم تبادل التسميات فقط في الواجهة حسب طلبك.
       const total = parseFloat($('totalAmt').value), down = parseFloat($('downAmt').value||0), due = $('dueDate').value || null;
       const official = parseFloat($('officialPrice').value||0) || 0;
       if(!cust || !prod || isNaN(total) || total <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
@@ -540,6 +604,7 @@
       $('d_due').textContent = r.dueDate || '-';
       $('d_total').textContent = formatMoney(r.totalAmount);
       $('d_down').textContent = formatMoney(r.downPayment||0);
+      // d_official الآن معنون "نقد" في الواجهة (تم التبديل)
       $('d_official').textContent = r.officialPrice ? formatMoney(r.officialPrice) : '-';
       const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
       const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
@@ -700,7 +765,12 @@
 
     // initial
     renderLists();
-    $('search').addEventListener('input', renderLists);
+
+    // Improved search interactions: debounce + button
+    const debouncedRender = debounce(renderLists, 240);
+    $('search').addEventListener('input', debouncedRender);
+    $('searchBtn').addEventListener('click', renderLists);
+
     window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
     document.querySelectorAll('.backdrop').forEach(b => b.addEventListener('click', (e)=> e.stopPropagation()));
     document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ /* persistent */ } });
