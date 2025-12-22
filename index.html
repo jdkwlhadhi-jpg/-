@@ -37,8 +37,8 @@
     .tabs{display:flex;gap:8px;margin-bottom:10px}
     .tab{flex:1;text-align:center;padding:10px;border-radius:10px;background:#f6fbfc;cursor:pointer;font-weight:800;font-size:14px}
     .tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
-    .search-row{display:flex;gap:8px;align-items:center;margin-bottom:10px}
-    /* Search input made slightly smaller as requested */
+    .search-row{display:flex;gap:8px;align-items:center;margin-top:12px;margin-bottom:10px}
+    /* Search input made slightly smaller and kept constrained */
     .search-row input{flex:1;height:40px;padding:8px;border-radius:10px;border:1px solid #e6eef7;max-width:420px}
     .add-form{display:flex;flex-direction:column;gap:10px;margin-bottom:12px}
     .field{display:flex;flex-direction:column;gap:6px}
@@ -130,11 +130,6 @@
           <div id="tabOverdue" class="tab" role="tab" tabindex="0">المتأخرون</div>
         </div>
 
-        <div class="search-row">
-          <input id="search" placeholder="ابحث عن اسم العميل..." aria-label="بحث عن اسم العميل" />
-          <button id="searchBtn" class="btn-ghost">بحث</button>
-        </div>
-
         <div class="add-form">
           <div class="field">
             <label for="custName">اسم العميل</label>
@@ -168,6 +163,12 @@
           <div style="display:flex;justify-content:flex-end">
             <button id="btnAdd" class="btn">أضف</button>
           </div>
+        </div>
+
+        <!-- تم نقل خانة البحث أسفل نموذج الإضافة مع الحفاظ على الحجم -->
+        <div class="search-row" style="justify-content:flex-start">
+          <input id="search" placeholder="ابحث عن اسم العميل..." aria-label="بحث عن اسم العميل" />
+          <button id="searchBtn" class="btn-ghost">بحث</button>
         </div>
 
         <div style="margin-top:12px">
@@ -322,7 +323,9 @@
     function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function genId(){ try{return (crypto && crypto.randomUUID)?crypto.randomUUID():'r_'+Date.now()+'_'+Math.floor(Math.random()*1000000)}catch(e){return 'r_'+Date.now()} }
 
-    // Normalize Arabic text for robust matching: remove tashkeel, normalize alef/ya/ta-marbuTa etc.
+    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+    // Normalize Arabic text for robust matching
     function normalizeText(s){
       if(!s) return '';
       return s.toString().toLowerCase().trim()
@@ -331,7 +334,6 @@
         .replace(/ى/g,'ي')
         .replace(/ؤ/g,'و')
         .replace(/ئ/g,'ي')
-        // keep ة as-is (do not convert to ه)
         .replace(/ـ/g,'')
         .replace(/\s+/g,' ');
     }
@@ -341,19 +343,15 @@
       return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean);
     }
 
-    // Match a record against tokens.
-    // Requirement now: search should match customer name only.
+    // Match records only by customer name (as requested)
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
       const customer = normalizeText(record.customerName || '');
       return tokens.every(token => customer.indexOf(token) !== -1);
     }
 
-    // Optionally highlight matches in displayed strings (simple, token-based)
     function highlightText(original, tokens){
       if(!original || !tokens || tokens.length===0) return original;
-      // For highlighting we operate on the original text but use normalized tokens.
-      // Build naive highlights by matching token substrings case-insensitively.
       let out = original;
       tokens.forEach(token=>{
         try{
@@ -364,8 +362,6 @@
       });
       return out;
     }
-
-    function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
     // Debounce utility
     function debounce(fn, wait){
@@ -429,7 +425,6 @@
       return diff >= 30 && remaining > 0;
     }
 
-    // Update totals and make amounts prominent
     function updateTotals(){
       let totalRemaining = 0;
       (records||[]).forEach(r=>{
@@ -440,12 +435,9 @@
         const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
         totalRemaining += remaining;
       });
-
-      // Put the formatted numbers in the big panel badges
       if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
     }
 
-    // Render lists and recalc totals (search only by customer name)
     function renderLists(){
       const q = ($('search').value||'').trim();
       const tokens = getSearchTokens(q);
@@ -457,7 +449,6 @@
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-        // Highlight customer matches (basic)
         const tokensForHighlight = tokens.slice();
         const nameHtml = highlightText(r.customerName || '', tokensForHighlight);
         const prodHtml = r.productName || '';
@@ -559,7 +550,7 @@
       showToast('تمت الإضافة');
     });
 
-    // Detail & payments
+    // Detail & payments (unchanged)
     function openDetail(id, focusPay=false){
       const r = records.find(x=> x.id === id); if(!r) return;
       activeDetailId = id;
@@ -600,7 +591,6 @@
 
     $('closeDetail').addEventListener('click', ()=> $('detailBackdrop').style.display = 'none');
 
-    // pay amount validation in real-time
     document.addEventListener('input', (e)=>{
       if(e.target && e.target.id === 'payAmount'){
         const val = parseFloat($('payAmount').value || '0');
@@ -643,7 +633,7 @@
       renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
     });
 
-    // Auth interactions (unchanged logic)
+    // Auth interactions
     $('togglePassword').addEventListener('click', ()=>{
       const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password';
       $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈';
@@ -740,4 +730,4 @@
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
 </body>
-          </html>
+</html>
