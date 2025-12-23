@@ -133,7 +133,7 @@
             <input id="custName" class="large" placeholder="اسم العميل" />
           </div>
 
-          <!-- الحقل الجديد لرقم الهاتف تحت اسم العميل -->
+          <!-- رقم الهاتف -->
           <div class="field">
             <label for="custPhone">هاتف العميل</label>
             <input id="custPhone" type="tel" placeholder="مثال: 0591234567" />
@@ -144,14 +144,18 @@
             <input id="prodName" placeholder="اسم المنتج" />
           </div>
 
+          <!-- swapped labels/functionality:
+               totalAmt input now represents "نقد" (cash)
+               officialPrice input now represents "أقساط" (installment total)
+          -->
           <div class="field">
-            <label for="totalAmt">أقساط</label>
-            <input id="totalAmt" class="large" type="number" placeholder="قيمة الأقساط" />
+            <label for="totalAmt">نقد</label>
+            <input id="totalAmt" class="large" type="number" placeholder="المبلغ النقدي" />
           </div>
 
           <div class="field">
-            <label for="officialPrice">نقد</label>
-            <input id="officialPrice" type="number" placeholder="المبلغ" />
+            <label for="officialPrice">أقساط</label>
+            <input id="officialPrice" type="number" placeholder="قيمة الأقساط" />
           </div>
 
           <div class="field">
@@ -197,7 +201,6 @@
         <div class="muted-small">العميل</div>
         <div id="d_name" style="font-weight:900;margin-top:6px"></div>
 
-        <!-- عرض هاتف العميل في شاشة التفاصيل -->
         <div class="muted-small" style="margin-top:10px">الهاتف</div>
         <div id="d_phone" style="margin-top:6px;color:var(--muted);font-weight:800">-</div>
 
@@ -207,7 +210,7 @@
         <div style="margin-top:12px">
           <div class="muted-small">تاريخ الاستحقاق</div><div id="d_due" class="due-large" style="margin-top:6px">-</div>
 
-          <div class="muted-small" style="margin-top:10px">المبلغ الكلي</div><div id="d_total" style="font-weight:900;margin-top:6px"></div>
+          <div class="muted-small" style="margin-top:10px">المبلغ الكلي (أقساط)</div><div id="d_total" style="font-weight:900;margin-top:6px"></div>
           <div class="muted-small" style="margin-top:10px">الدفعة المقدمة</div><div id="d_down" style="margin-top:6px"></div>
 
           <div class="muted-small" style="margin-top:10px">نقد</div>
@@ -335,6 +338,17 @@
 
     function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
 
+    // escape user text to avoid XSS when using innerHTML for highlight
+    function escapeHtml(str){
+      if(!str) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
     // Normalize Arabic text for robust matching
     function normalizeText(s){
       if(!s) return '';
@@ -363,29 +377,35 @@
       return tokens.every(token => first.startsWith(token));
     }
 
+    // Highlight function: escape original text to avoid XSS, then mark prefixes that match tokens.
     function highlightText(original, tokens){
-      if(!original || !tokens || tokens.length===0) return original;
+      if(!original || !tokens || tokens.length===0) return escapeHtml(original || '');
       try{
+        const escaped = escapeHtml(original);
         const words = original.split(' ');
         const firstWord = words.length ? words[0] : original;
-        let highlightedFirst = firstWord;
+        const rest = words.slice(1).join(' ');
+        let highlightedFirst = escapeHtml(firstWord);
+
         tokens.forEach(token=>{
           if(!token) return;
           const normFirst = normalizeText(firstWord);
           if(normFirst.indexOf(token) === 0){
-            const origSegment = firstWord.slice(0, token.length);
-            highlightedFirst = highlightedFirst.replace(origSegment, `<mark>${origSegment}</mark>`);
+            const origPrefix = firstWord.slice(0, token.length);
+            const escapedPrefix = escapeHtml(origPrefix);
+            const re = new RegExp('^' + escapeRegExp(escapedPrefix));
+            highlightedFirst = highlightedFirst.replace(re, `<mark>${escapedPrefix}</mark>`);
           }
         });
-        const rest = words.slice(1).join(' ');
-        return rest ? (highlightedFirst + ' ' + rest) : highlightedFirst;
+
+        return rest ? (highlightedFirst + ' ' + escapeHtml(rest)) : highlightedFirst;
       }catch(e){
-        let out = original;
+        let out = escapeHtml(original);
         tokens.forEach(token=>{
           try{
             if(!token) return;
             const re = new RegExp(escapeRegExp(token), 'ig');
-            out = out.replace(re, m => `<mark>${m}</mark>`);
+            out = out.replace(re, m => `<mark>${escapeHtml(m)}</mark>`);
           }catch(e){}
         });
         return out;
@@ -410,6 +430,20 @@
     let activeDetailId = null;
     let cloudUnsub = null;
 
+    // Convert various timestamp formats to millis for reliable comparison
+    function tsToMillis(t){
+      if(!t) return 0;
+      if(typeof t === 'number') return t;
+      if(typeof t === 'string') {
+        const p = Date.parse(t);
+        return isNaN(p) ? 0 : p;
+      }
+      if(typeof t.toMillis === 'function') {
+        try{ return t.toMillis(); }catch(e){ return 0; }
+      }
+      return 0;
+    }
+
     function mergeRecords(local, cloud){
       const map = new Map();
       (local||[]).forEach(r=> map.set(r.id || r.createdAt || JSON.stringify(r), r));
@@ -417,8 +451,8 @@
         const key = r.id || r.createdAt || JSON.stringify(r);
         if(map.has(key)){
           const existing = map.get(key);
-          const aTime = (existing.updatedAt || existing.createdAt || '').toString();
-          const bTime = (r.updatedAt || r.createdAt || '').toString();
+          const aTime = tsToMillis(existing.updatedAt || existing.createdAt || '');
+          const bTime = tsToMillis(r.updatedAt || r.createdAt || '');
           if(!aTime || (bTime && bTime > aTime)) map.set(key, r);
         } else map.set(key, r);
       });
@@ -480,18 +514,19 @@
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
         const tokensForHighlight = tokens.slice();
         const nameHtml = highlightText(r.customerName || '', tokensForHighlight);
-        const prodHtml = r.productName || '';
-        const phoneHtml = r.phone ? `<div class="phone">📞 ${r.phone}</div>` : '';
+        const prodHtml = escapeHtml(r.productName || '');
+        const phoneHtml = r.phone ? `<div class="phone">📞 ${escapeHtml(r.phone)}</div>` : '';
 
         const li=document.createElement('li'); li.className='item';
+        // delete removed from lists; only in details
         li.innerHTML = `<div class="item-left">
-            <div class="avatar">${(r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+            <div class="avatar">${escapeHtml((r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase())}</div>
             <div class="meta">
               <div class="name">${nameHtml}</div>
               <div class="product">${prodHtml} ${r.officialPrice?(' — نقد: '+formatMoney(r.officialPrice)):''}</div>
               ${phoneHtml}
               <div class="due-label">تاريخ الاستحقاق</div>
-              <div class="due-large">${r.dueDate||'-'}</div>
+              <div class="due-large">${escapeHtml(r.dueDate||'-')}</div>
             </div>
           </div>
           <div class="controls">
@@ -499,7 +534,6 @@
             <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
               <div style="display:flex;gap:6px">
                 <button data-id="${r.id}" data-action="view" class="btn-detail">تفاصيل</button>
-                <button data-id="${r.id}" data-action="permanentDelete" class="btn-delete">حذف</button>
               </div>
               <button data-id="${r.id}" data-action="pay" class="btn-ghost-small">دفعة</button>
             </div>
@@ -515,18 +549,18 @@
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
         const nameHtml = highlightText(r.customerName || '', getSearchTokens($('search').value||''));
-        const prodHtml = r.productName || '';
-        const phoneHtml = r.phone ? `<div class="phone">📞 ${r.phone}</div>` : '';
+        const prodHtml = escapeHtml(r.productName || '');
+        const phoneHtml = r.phone ? `<div class="phone">📞 ${escapeHtml(r.phone)}</div>` : '';
 
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
-            <div class="avatar" style="background:linear-gradient(135deg,#ff7a7a,#ff4d4d)">${(r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase()}</div>
+            <div class="avatar" style="background:linear-gradient(135deg,#ff7a7a,#ff4d4d)">${escapeHtml((r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase())}</div>
             <div class="meta">
               <div class="name" style="color:var(--danger)">${nameHtml}</div>
               <div class="product">${prodHtml} ${r.officialPrice?(' — نقد: '+formatMoney(r.officialPrice)):''}</div>
               ${phoneHtml}
               <div class="due-label">تاريخ الاستحقاق</div>
-              <div class="due-large">${r.dueDate||'-'}</div>
+              <div class="due-large">${escapeHtml(r.dueDate||'-')}</div>
             </div>
           </div>
           <div class="controls">
@@ -534,7 +568,6 @@
             <div style="display:flex;flex-direction:column;gap:8px;align-items:flex-end">
               <div style="display:flex;gap:6px">
                 <button data-id="${r.id}" data-action="view" class="btn-detail">تفاصيل</button>
-                <button data-id="${r.id}" data-action="permanentDelete" class="btn-delete">حذف</button>
               </div>
               <button data-id="${r.id}" data-action="pay" class="btn-ghost-small">دفعة</button>
             </div>
@@ -554,7 +587,6 @@
       if(!action) return;
       if(action === 'view'){ openDetail(id); return; }
       if(action === 'pay'){ openDetail(id, true); return; }
-      if(action === 'permanentDelete'){ await deleteRecordPermanent(id); return; }
     });
 
     async function deleteRecordPermanent(id){
@@ -567,26 +599,42 @@
       showToast('تم الحذف نهائياً');
     }
 
-    // Add record (now includes phone)
+    // Add record (swapped behavior: totalAmt input -> officialPrice; officialPrice input -> totalAmount)
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim();
       const phone = $('custPhone').value.trim();
       const prod = $('prodName').value.trim();
-      const total = parseFloat($('totalAmt').value);
+
+      // totalAmt input now contains cash (officialPrice)
+      const cash = parseFloat($('totalAmt').value||0) || 0;
+      // officialPrice input now contains installments total (totalAmount)
+      const installments = parseFloat($('officialPrice').value);
       const down = parseFloat($('downAmt').value||0);
       const due = $('dueDate').value || null;
-      const official = parseFloat($('officialPrice').value||0) || 0;
-      if(!cust || !prod || isNaN(total) || total <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
-      if(down > total){ alert('الدفعة أكبر من المبلغ'); return; }
+
+      // Validate installments (must be provided and > 0)
+      if(!cust || !prod || isNaN(installments) || installments <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
+      if(down > installments){ alert('الدفعة أكبر من المبلغ'); return; }
+
+      // optional phone simple validation
+      if(phone){
+        const clean = phone.replace(/\s+/g,'');
+        if(!/^\+?\d{7,15}$/.test(clean) && !/^0?5\d{8}$/.test(clean)){
+          if(!confirm('صيغة رقم الهاتف غير مألوفة. أضف الرقم على أي حال؟')) return;
+        }
+      }
+
       const rec = {
         id: genId(),
         customerName: cust,
         phone: phone || '',
         productName: prod,
-        totalAmount: total,
-        downPayment: down,
-        officialPrice: official,
+        // store installments in totalAmount
+        totalAmount: installments,
+        // store cash in officialPrice
+        officialPrice: cash,
+        downPayment: down || 0,
         dueDate: due,
         payments: [],
         createdAt: new Date().toISOString(),
@@ -595,7 +643,8 @@
       records.unshift(rec); saveLocal(records);
       scheduleCloudSave();
       renderLists();
-      $('custName').value=''; $('custPhone').value=''; $('prodName').value=''; $('totalAmt').value=''; $('downAmt').value='0'; $('dueDate').value=''; $('officialPrice').value='';
+      // clear inputs
+      $('custName').value=''; $('custPhone').value=''; $('prodName').value=''; $('totalAmt').value=''; $('officialPrice').value=''; $('downAmt').value=''; $('dueDate').value='';
       showToast('تمت الإضافة');
     });
 
@@ -607,8 +656,10 @@
       $('d_phone').textContent = r.phone || '-';
       $('d_product').textContent = r.productName;
       $('d_due').textContent = r.dueDate || '-';
+      // d_total shows installments total (totalAmount)
       $('d_total').textContent = formatMoney(r.totalAmount);
       $('d_down').textContent = formatMoney(r.downPayment||0);
+      // d_official shows cash (officialPrice)
       $('d_official').textContent = r.officialPrice ? formatMoney(r.officialPrice) : '-';
       const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
       const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
@@ -619,7 +670,7 @@
       $('paymentsList').innerHTML = '';
       (r.payments||[]).slice().reverse().forEach(p=>{
         const div = document.createElement('div'); div.className='payment-item';
-        div.innerHTML = `<div><strong>${formatMoney(p.amount)}</strong><div style="color:var(--muted)">${p.date||''}</div></div><div><button class="btn-ghost-small" data-payid="${p.id}">حذف</button></div>`;
+        div.innerHTML = `<div><strong>${formatMoney(p.amount)}</strong><div style="color:var(--muted)">${escapeHtml(p.date||'')}</div></div><div><button class="btn-ghost-small" data-payid="${p.id}">حذف</button></div>`;
         $('paymentsList').appendChild(div);
         div.querySelector('button').addEventListener('click', async ()=>{
           if(!confirm('حذف هذه الدفعة نهائياً؟')) return;
@@ -631,7 +682,10 @@
         });
       });
       $('paymentsCount').textContent = (r.payments? r.payments.length:0) + ' دفعات';
-      $('payAmount').value = remaining>0? String(remaining):'';
+
+      // leave payAmount empty as requested previously
+      $('payAmount').value = '';
+
       $('payDate').value = new Date().toISOString().slice(0,10);
       $('payWarning').style.display = 'none';
       $('detailBackdrop').style.display = 'flex';
@@ -775,8 +829,25 @@
     $('searchBtn').addEventListener('click', renderLists);
 
     window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
-    document.querySelectorAll('.backdrop').forEach(b => b.addEventListener('click', (e)=> e.stopPropagation()));
-    document.addEventListener('keydown', (e)=>{ if(e.key === 'Escape'){ /* persistent */ } });
+
+    // Allow closing certain modals by clicking backdrop (but keep auth backdrop persistent)
+    document.querySelectorAll('.backdrop').forEach(b => {
+      b.addEventListener('click', (e)=>{
+        if(e.target !== b) return;
+        if(b.id === 'authBackdrop') return; // keep auth modal persistent
+        b.style.display = 'none';
+      });
+      b.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => ev.stopPropagation()));
+    });
+
+    // Allow Escape to close open non-auth modals
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
+        if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
+      }
+    });
+
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
 </body>
