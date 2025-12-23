@@ -1,4 +1,3 @@
-```html name=index.html
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -444,6 +443,35 @@
       return 0;
     }
 
+    // Updated isOverdueBy30:
+    // - Considers dueDate and difference >= 30 days
+    // - Still requires remaining > 0
+    // - BUT if there exists a payment with date after the due date (i.e., user added a payment), treat the record as no longer overdue (it will move to "قيد التسديد")
+    function isOverdueBy30(record){
+      if(!record || !record.dueDate) return false;
+      const due = new Date(record.dueDate + 'T00:00:00'), today = new Date();
+      const diff = Math.floor((today - due)/(1000*60*60*24));
+      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
+      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
+      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+
+      if(!(diff >= 30 && remaining > 0)) return false;
+
+      // If there is any payment whose date is after the due date, consider it brought back to "قيد التسديد"
+      const payments = (record.payments||[]).map(p => p && p.date ? p.date : null).filter(Boolean);
+      if(payments.length){
+        // find the latest payment date (YYYY-MM-DD expected)
+        let latest = payments.reduce((a,b) => a > b ? a : b, payments[0]);
+        // parse and compare
+        const latestDate = new Date(latest + 'T00:00:00');
+        if(!isNaN(latestDate.getTime()) && latestDate > due){
+          return false; // treat as not overdue
+        }
+      }
+
+      return true;
+    }
+
     function mergeRecords(local, cloud){
       const map = new Map();
       (local||[]).forEach(r=> map.set(r.id || r.createdAt || JSON.stringify(r), r));
@@ -476,16 +504,6 @@
         if(showToastOnSuccess) showToast('تمت المزامنة');
         return true;
       }catch(err){ console.error('sync error', err); if(showToastOnSuccess) showToast('فشل المزامنة'); return false; }
-    }
-
-    function isOverdueBy30(record){
-      if(!record || !record.dueDate) return false;
-      const due = new Date(record.dueDate + 'T00:00:00'), today = new Date();
-      const diff = Math.floor((today - due)/(1000*60*60*24));
-      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
-      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
-      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-      return diff >= 30 && remaining > 0;
     }
 
     function updateTotals(){
@@ -731,7 +749,13 @@
 
       const date = $('payDate').value || new Date().toISOString().slice(0,10);
       rec.payments = rec.payments || []; rec.payments.push({ id:'p_'+Date.now(), amount: Math.round(amt*100)/100, date });
+      // mark updatedAt so merge logic works
       rec.updatedAt = new Date().toISOString();
+
+      // IMPORTANT: after adding a payment we want overdue entries to move to "قيد التسديد".
+      // The isOverdueBy30 function already checks whether there exists a payment dated after the dueDate
+      // and treats such records as not-overdue. Because we just added a payment with today's date (likely after due),
+      // renderLists() will now place this record into the active list.
       saveLocal(records);
       await writeCloud();
       renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
