@@ -27,8 +27,7 @@
     .header-actions{display:flex;gap:8px;align-items:center}
     .badge{background:rgba(255,255,255,0.12);padding:6px 10px;border-radius:999px;font-weight:800;color:#fff;font-size:13px}
     .small-badge{background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:10px;font-weight:800;color:#fff;font-size:12px;display:flex;align-items:center;gap:8px}
-    .people-badge{background:rgba(0,0,0,0.12);padding:6px 10px;border-radius:999px;font-weight:900;color:#fff;font-size:13px;display:flex;align-items:center;gap:8px;border:0}
-    .people-badge svg{opacity:0.98}
+    .small-badge strong{display:inline-block;min-width:90px;text-align:left}
     .user-pill{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.06);font-weight:800}
     .btn, .btn-ghost {min-height:44px; padding:10px 12px;border-radius:10px;font-weight:800;border:0;cursor:pointer}
     .btn{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
@@ -84,6 +83,14 @@
     .totals-amount{font-size:20px;font-weight:900;color:#06202a}
     .totals-amount.profit-positive{color:var(--success)}
     .totals-amount.profit-negative{color:var(--danger)}
+    .people-row{display:flex;align-items:center;gap:10px;margin-top:6px}
+    .count-icon{
+      width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+      background:linear-gradient(135deg,#f3f9ff,#e6f7fb);color:var(--primary);font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);
+      flex:0 0 40px;
+    }
+    .count-number{font-weight:900;color:#06202a}
+    .edit-field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
     mark{background:rgba(255,235,59,0.45);padding:0 2px;border-radius:2px}
     @media(min-width:720px){
       header{padding:16px}
@@ -106,15 +113,6 @@
       </div>
 
       <div class="header-actions" role="toolbar" aria-label="أزرار">
-        <!-- أيقونة عدد الأشخاص -->
-        <button id="peopleBtn" class="people-badge" aria-label="عدد الأشخاص" title="عدد الأشخاص">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 12a4 4 0 100-8 4 4 0 000 8z" fill="#fff"></path>
-            <path d="M3 20a8.5 8.5 0 0118 0v1H3v-1z" fill="#fff"></path>
-          </svg>
-          <span id="peopleCount">0</span>
-        </button>
-
         <div class="badge">متأخرون: <strong id="overdueCountHeader">0</strong></div>
         <div id="userPill" class="user-pill">غير مسجل</div>
         <button id="btnOpenAuth" class="btn-ghost">تسجيل دخول</button>
@@ -125,9 +123,15 @@
     <main id="mainPanel" style="display:none;margin-top:12px">
       <div class="panel" aria-live="polite">
         <div class="totals-row" role="region" aria-label="ملخص المبالغ">
-          <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات">
+          <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات" aria-live="polite">
             <div class="totals-label">المتبقي الكلي</div>
             <div id="totalRemainingAll" class="totals-amount">0.00</div>
+
+            <!-- isolated icon with count next to it -->
+            <div class="people-row" aria-hidden="false" aria-label="عدد الأشخاص">
+              <div class="count-icon" title="عدد الأشخاص" role="img" aria-label="أيقونة أشخاص">👥</div>
+              <div><div style="font-size:12px;color:var(--muted)">عدد الأشخاص</div><div id="totalCount" class="count-number">0</div></div>
+            </div>
           </div>
         </div>
 
@@ -245,6 +249,7 @@
 
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
           <button id="savePay" class="btn-detail">حفظ</button>
+          <button id="editFromDetail" class="btn-ghost-small">تعديل</button>
           <button id="deleteRec" class="btn-delete">حذف نهائي</button>
         </div>
       </div>
@@ -260,40 +265,20 @@
       </div>
 
       <div style="margin-top:12px">
-        <div class="field">
-          <label for="editCustName">اسم العميل</label>
-          <input id="editCustName" />
-        </div>
-        <div class="field">
-          <label for="editCustPhone">هاتف العميل</label>
-          <input id="editCustPhone" type="tel" />
-        </div>
-        <div class="field">
-          <label for="editProdName">اسم المنتج</label>
-          <input id="editProdName" />
-        </div>
+        <div id="editError" class="muted-small" style="display:none;color:var(--danger)"></div>
 
-        <!-- same swapped semantics as add form -->
-        <div class="field">
-          <label for="editTotalAmt">نقد</label>
-          <input id="editTotalAmt" type="number" />
-        </div>
-        <div class="field">
-          <label for="editOfficialPrice">أقساط</label>
-          <input id="editOfficialPrice" type="number" />
-        </div>
-        <div class="field">
-          <label for="editDownAmt">الدفعة</label>
-          <input id="editDownAmt" type="number" />
-        </div>
-        <div class="field">
-          <label for="editDueDate">تاريخ الاستحقاق</label>
-          <input id="editDueDate" type="date" />
-        </div>
+        <div class="edit-field"><label>اسم العميل</label><input id="editCustName" /></div>
+        <div class="edit-field"><label>هاتف العميل</label><input id="editCustPhone" /></div>
+        <div class="edit-field"><label>اسم المنتج</label><input id="editProdName" /></div>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="saveEdit" class="btn">حفظ التعديل</button>
-          <button id="cancelEdit" class="btn-ghost">إلغاء</button>
+        <div class="edit-field"><label>نقد</label><input id="editTotalAmt" type="number" /></div>
+        <div class="edit-field"><label>أقساط</label><input id="editOfficialPrice" type="number" /></div>
+        <div class="edit-field"><label>الدفعة</label><input id="editDownAmt" type="number" /></div>
+        <div class="edit-field"><label>تاريخ الاستحقاق</label><input id="editDueDate" type="date" /></div>
+
+        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+          <button id="doSaveEdit" class="btn">حفظ التعديلات</button>
+          <button id="doCancelEdit" class="btn-ghost">إلغاء</button>
         </div>
       </div>
     </div>
@@ -397,30 +382,17 @@
 
     function escapeHtml(str){
       if(!str) return '';
-      return String(str)
-        .replace(/&/g, '&amp;')
-        .replace(/</g, '&lt;')
-        .replace(/>/g, '&gt;')
-        .replace(/"/g, '&quot;')
-        .replace(/'/g, '&#39;');
+      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
     }
 
     function normalizeText(s){
       if(!s) return '';
       return s.toString().toLowerCase().trim()
         .replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g,'')
-        .replace(/[أإآ]/g,'ا')
-        .replace(/ى/g,'ي')
-        .replace(/ؤ/g,'و')
-        .replace(/ئ/g,'ي')
-        .replace(/ـ/g,'')
-        .replace(/\s+/g,' ');
+        .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ـ/g,'').replace(/\s+/g,' ');
     }
 
-    function getSearchTokens(q){
-      if(!q) return [];
-      return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean);
-    }
+    function getSearchTokens(q){ if(!q) return []; return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean); }
 
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
@@ -438,7 +410,6 @@
         const firstWord = words.length ? words[0] : original;
         const rest = words.slice(1).join(' ');
         let highlightedFirst = escapeHtml(firstWord);
-
         tokens.forEach(token=>{
           if(!token) return;
           const normFirst = normalizeText(firstWord);
@@ -449,48 +420,33 @@
             highlightedFirst = highlightedFirst.replace(re, `<mark>${escapedPrefix}</mark>`);
           }
         });
-
         return rest ? (highlightedFirst + ' ' + escapeHtml(rest)) : highlightedFirst;
       }catch(e){
         let out = escapeHtml(original);
         tokens.forEach(token=>{
-          try{
-            if(!token) return;
-            const re = new RegExp(escapeRegExp(token), 'ig');
-            out = out.replace(re, m => `<mark>${escapeHtml(m)}</mark>`);
-          }catch(e){}
+          try{ if(!token) return; const re = new RegExp(escapeRegExp(token), 'ig'); out = out.replace(re, m => `<mark>${escapeHtml(m)}</mark>`); }catch(e){}
         });
         return out;
       }
     }
 
-    function debounce(fn, wait){
-      let h = null;
-      return function(...args){
-        if(h) clearTimeout(h);
-        h = setTimeout(()=>{ fn.apply(this,args); h=null; }, wait);
-      };
-    }
+    // Debounce
+    function debounce(fn, wait){ let h = null; return function(...args){ if(h) clearTimeout(h); h = setTimeout(()=>{ fn.apply(this,args); h=null; }, wait); }; }
 
+    // Local state & sync
     const KEY='debt_app_v_mobile';
     function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
     function saveLocal(v){ localStorage.setItem(KEY, JSON.stringify(v)); }
     let records = loadLocal();
     let currentUser = null;
     let activeDetailId = null;
-    let editingId = null;
     let cloudUnsub = null;
 
     function tsToMillis(t){
       if(!t) return 0;
       if(typeof t === 'number') return t;
-      if(typeof t === 'string') {
-        const p = Date.parse(t);
-        return isNaN(p) ? 0 : p;
-      }
-      if(typeof t.toMillis === 'function') {
-        try{ return t.toMillis(); }catch(e){ return 0; }
-      }
+      if(typeof t === 'string'){ const p = Date.parse(t); return isNaN(p)?0:p; }
+      if(typeof t.toMillis === 'function'){ try{ return t.toMillis(); }catch(e){ return 0; } }
       return 0;
     }
 
@@ -501,18 +457,13 @@
       const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
       const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
       const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-
       if(!(diff >= 30 && remaining > 0)) return false;
-
       const payments = (record.payments||[]).map(p => p && p.date ? p.date : null).filter(Boolean);
       if(payments.length){
         let latest = payments.reduce((a,b) => a > b ? a : b, payments[0]);
         const latestDate = new Date(latest + 'T00:00:00');
-        if(!isNaN(latestDate.getTime()) && latestDate > due){
-          return false;
-        }
+        if(!isNaN(latestDate.getTime()) && latestDate > due) return false;
       }
-
       return true;
     }
 
@@ -561,11 +512,7 @@
         totalRemaining += remaining;
       });
       if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
-    }
-
-    function updatePeopleCount(){
-      const count = (records || []).length;
-      if($('peopleCount')) $('peopleCount').textContent = count;
+      if($('totalCount')) $('totalCount').textContent = (records || []).length;
     }
 
     function renderLists(){
@@ -582,7 +529,6 @@
         const nameHtml = highlightText(r.customerName || '', tokens.slice());
         const prodHtml = escapeHtml(r.productName || '');
         const phoneHtml = r.phone ? `<div class="phone">📞 ${escapeHtml(r.phone)}</div>` : '';
-
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
             <div class="avatar">${escapeHtml((r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase())}</div>
@@ -617,7 +563,6 @@
         const nameHtml = highlightText(r.customerName || '', getSearchTokens($('search').value||''));
         const prodHtml = escapeHtml(r.productName || '');
         const phoneHtml = r.phone ? `<div class="phone">📞 ${escapeHtml(r.phone)}</div>` : '';
-
         const li=document.createElement('li'); li.className='item';
         li.innerHTML = `<div class="item-left">
             <div class="avatar" style="background:linear-gradient(135deg,#ff7a7a,#ff4d4d)">${escapeHtml((r.customerName||'--').split(' ').map(s=>s[0]).slice(0,2).join('').toUpperCase())}</div>
@@ -644,7 +589,6 @@
       $('overdueCountHeader').textContent = overdueArr.length;
       saveLocal(records);
       updateTotals();
-      updatePeopleCount();
     }
 
     // Delegated actions
@@ -652,10 +596,7 @@
       const btn = e.target.closest('button');
       if(!btn) return;
       const id = btn.dataset.id, action = btn.dataset.action;
-      if(!action){
-        if(btn.id === 'peopleBtn'){ showActiveTab(); return; }
-        return;
-      }
+      if(!action) return;
       if(action === 'view'){ openDetail(id); return; }
       if(action === 'pay'){ openDetail(id, true); return; }
       if(action === 'edit'){ openEdit(id); return; }
@@ -671,43 +612,30 @@
       showToast('تم الحذف نهائياً');
     }
 
-    // Add record
+    // Add record (swapped fields: totalAmt = cash, officialPrice = installments)
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim();
       const phone = $('custPhone').value.trim();
       const prod = $('prodName').value.trim();
-      const cash = parseFloat($('totalAmt').value||0) || 0; // نقد
+      const cash = parseFloat($('totalAmt').value||0) || 0;
       const installments = parseFloat($('officialPrice').value);
       const down = parseFloat($('downAmt').value||0);
       const due = $('dueDate').value || null;
-
       if(!cust || !prod || isNaN(installments) || installments <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
       if(down > installments){ alert('الدفعة أكبر من المبلغ'); return; }
-
       if(phone){
         const clean = phone.replace(/\s+/g,'');
         if(!/^\+?\d{7,15}$/.test(clean) && !/^0?5\d{8}$/.test(clean)){
           if(!confirm('صيغة رقم الهاتف غير مألوفة. أضف الرقم على أي حال؟')) return;
         }
       }
-
       const rec = {
-        id: genId(),
-        customerName: cust,
-        phone: phone || '',
-        productName: prod,
-        totalAmount: installments, // أقساط
-        officialPrice: cash,       // نقد
-        downPayment: down || 0,
-        dueDate: due,
-        payments: [],
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
+        id: genId(), customerName: cust, phone: phone || '', productName: prod,
+        totalAmount: installments, officialPrice: cash, downPayment: down || 0, dueDate: due,
+        payments: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
       };
-      records.unshift(rec); saveLocal(records);
-      scheduleCloudSave();
-      renderLists();
+      records.unshift(rec); saveLocal(records); scheduleCloudSave(); renderLists();
       $('custName').value=''; $('custPhone').value=''; $('prodName').value=''; $('totalAmt').value=''; $('officialPrice').value=''; $('downAmt').value=''; $('dueDate').value='';
       showToast('تمت الإضافة');
     });
@@ -749,6 +677,8 @@
       $('payWarning').style.display = 'none';
       $('detailBackdrop').style.display = 'flex';
       $('deleteRec').onclick = async ()=>{ await deleteRecordPermanent(activeDetailId); $('detailBackdrop').style.display = 'none'; }
+      // edit button inside detail opens same edit modal
+      $('editFromDetail').onclick = ()=> openEdit(id);
       if(focusPay) setTimeout(()=> $('payAmount').focus(),160);
     }
 
@@ -762,16 +692,9 @@
         const paid = (rec.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(rec.totalAmount||0) - Number(rec.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-
-        if(isNaN(val) || val <= 0){
-          $('payWarning').textContent = 'أدخل مبلغاً صحيحاً';
-          $('payWarning').style.display = 'block';
-        } else if(val > remaining){
-          $('payWarning').textContent = 'المبلغ أكبر من المتبقي';
-          $('payWarning').style.display = 'block';
-        } else {
-          $('payWarning').style.display = 'none';
-        }
+        if(isNaN(val) || val <= 0){ $('payWarning').textContent = 'أدخل مبلغاً صحيحاً'; $('payWarning').style.display = 'block'; }
+        else if(val > remaining){ $('payWarning').textContent = 'المبلغ أكبر من المتبقي'; $('payWarning').style.display = 'block'; }
+        else { $('payWarning').style.display = 'none'; }
       }
     });
 
@@ -782,125 +705,77 @@
       const paid = (rec.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
       const principal = Math.max(0, Number(rec.totalAmount||0) - Number(rec.downPayment||0));
       const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-
-      if(amt > remaining){
-        alert('المبلغ الذي تحاول إضافته أكبر من المتبقي. عدّل المبلغ أو احذف الدفعات السابقة.');
-        return;
-      }
-
+      if(amt > remaining){ alert('المبلغ الذي تحاول إضافته أكبر من المتبقي. عدّل المبلغ أو احذف الدفعات السابقة.'); return; }
       const date = $('payDate').value || new Date().toISOString().slice(0,10);
       rec.payments = rec.payments || []; rec.payments.push({ id:'p_'+Date.now(), amount: Math.round(amt*100)/100, date });
       rec.updatedAt = new Date().toISOString();
-
       saveLocal(records);
       await writeCloud();
       renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
     });
 
-    // Edit functions
+    // ----- Edit functionality -----
+    let editingId = null;
     function openEdit(id){
       const r = records.find(x=> x.id === id); if(!r) return;
       editingId = id;
-      // populate fields (respect swapped semantics: editTotalAmt => نقد => officialPrice)
+      $('editError').style.display = 'none';
       $('editCustName').value = r.customerName || '';
       $('editCustPhone').value = r.phone || '';
       $('editProdName').value = r.productName || '';
-      $('editTotalAmt').value = r.officialPrice || '';
-      $('editOfficialPrice').value = r.totalAmount || '';
-      $('editDownAmt').value = r.downPayment || '';
+      // editTotalAmt -> cash (totalAmt input previously represented cash)
+      $('editTotalAmt').value = r.officialPrice != null ? String(r.officialPrice) : '';
+      // editOfficialPrice -> installments (officialPrice input previously represented installments)
+      $('editOfficialPrice').value = r.totalAmount != null ? String(r.totalAmount) : '';
+      $('editDownAmt').value = r.downPayment != null ? String(r.downPayment) : '';
       $('editDueDate').value = r.dueDate || '';
-      // close detail if open
-      $('detailBackdrop').style.display = 'none';
       $('editBackdrop').style.display = 'flex';
     }
 
-    function closeEditModal(){
-      editingId = null;
-      $('editBackdrop').style.display = 'none';
-    }
+    $('closeEdit').addEventListener('click', ()=> { $('editBackdrop').style.display = 'none'; editingId = null; });
+    $('doCancelEdit').addEventListener('click', ()=> { $('editBackdrop').style.display = 'none'; editingId = null; });
 
-    $('closeEdit').addEventListener('click', closeEditModal);
-    $('cancelEdit').addEventListener('click', closeEditModal);
-
-    $('saveEdit').addEventListener('click', async ()=>{
+    $('doSaveEdit').addEventListener('click', async ()=>{
       if(!editingId) return;
       const rec = records.find(r=> r.id === editingId); if(!rec) return;
-      const cust = $('editCustName').value.trim();
+      const name = $('editCustName').value.trim();
       const phone = $('editCustPhone').value.trim();
       const prod = $('editProdName').value.trim();
-      const cash = parseFloat($('editTotalAmt').value||0) || 0; // نقد => officialPrice
+      const cash = parseFloat($('editTotalAmt').value||0) || 0; // cash
       const installments = parseFloat($('editOfficialPrice').value);
       const down = parseFloat($('editDownAmt').value||0);
       const due = $('editDueDate').value || null;
-
-      if(!cust || !prod || isNaN(installments) || installments <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
-      if(down > installments){ alert('الدفعة أكبر من المبلغ'); return; }
-
-      rec.customerName = cust;
+      if(!name || !prod || isNaN(installments) || installments <= 0){ $('editError').textContent = 'أكمل الحقول الأساسية (الاسم، المنتج، الأقساط)'; $('editError').style.display = 'block'; return; }
+      if(down > installments){ $('editError').textContent = 'الدفعة أكبر من قيمة الأقساط'; $('editError').style.display = 'block'; return; }
+      // commit changes
+      rec.customerName = name;
       rec.phone = phone || '';
       rec.productName = prod;
-      rec.officialPrice = cash;
-      rec.totalAmount = installments;
+      rec.totalAmount = installments; // installments stored in totalAmount
+      rec.officialPrice = cash; // cash stored in officialPrice
       rec.downPayment = down || 0;
       rec.dueDate = due;
       rec.updatedAt = new Date().toISOString();
-
       saveLocal(records);
       await writeCloud();
+      $('editBackdrop').style.display = 'none';
+      editingId = null;
       renderLists();
-      closeEditModal();
       showToast('تم حفظ التعديلات');
     });
 
-    // Auth and misc handlers
-    $('togglePassword').addEventListener('click', ()=>{
-      const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password';
-      $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈';
-    });
+    // ----- Auth & registration, misc (unchanged) -----
+    $('togglePassword').addEventListener('click', ()=>{ const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password'; $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈'; });
     $('rememberMe').addEventListener('change', (e)=>{ const mode = e.target.checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; auth.setPersistence(mode).catch(()=>{}); });
 
-    $('doLogin').addEventListener('click', async ()=>{
-      showAuthError('');
-      const email = $('loginEmail').value.trim(), pass = $('loginPassword').value;
-      if(!email || !pass){ showAuthError('أكمل الحقول أولاً'); return; }
-      const btn = $('doLogin'); const prev = btn.textContent; btn.textContent = '...جارٍ الدخول'; btn.disabled = true;
-      try{ await auth.signInWithEmailAndPassword(email, pass); showToast('تم تسجيل الدخول'); } catch(err){ console.error(err); showAuthError((err.code||'') + ' — ' + (err.message||'')); } finally{ btn.disabled = false; btn.textContent = prev; }
-    });
+    $('doLogin').addEventListener('click', async ()=>{ showAuthError(''); const email = $('loginEmail').value.trim(), pass = $('loginPassword').value; if(!email || !pass){ showAuthError('أكمل الحقول أولاً'); return; } const btn = $('doLogin'); const prev = btn.textContent; btn.textContent = '...جارٍ الدخول'; btn.disabled = true; try{ await auth.signInWithEmailAndPassword(email, pass); showToast('تم تسجيل الدخول'); } catch(err){ console.error(err); showAuthError((err.code||'') + ' — ' + (err.message||'')); } finally{ btn.disabled = false; btn.textContent = prev; } });
 
     $('openRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'flex'; });
     $('closeRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'none'; });
 
-    $('doRegister').addEventListener('click', async ()=>{
-      showRegError(''); showRegInfo('');
-      const email = $('regEmail').value.trim();
-      const display = $('regDisplayName').value.trim();
-      const pass = $('regPassword').value;
-      const pass2 = $('regPassword2').value;
-      if(!email || !pass || !pass2){ showRegError('أكمل جميع الحقول'); return; }
-      if(pass.length < 6){ showRegError('كلمة السر يجب أن تكون 6 أحرف على الأقل'); return; }
-      if(pass !== pass2){ showRegError('كلمة السر وتأكيدها غير متطابقين'); return; }
-      const btn = $('doRegister'); btn.disabled = true; const prev = btn.textContent; btn.textContent = '...جارٍ الإنشاء';
-      try{
-        const cred = await auth.createUserWithEmailAndPassword(email, pass);
-        if(cred && cred.user && display){
-          try{ await cred.user.updateProfile({ displayName: display }); }catch(e){ console.warn('updateProfile', e); }
-        }
-        showRegInfo('تم إنشاء الحساب وتسجيل الدخول');
-        setTimeout(()=>{ $('registerBackdrop').style.display = 'none'; }, 700);
-      }catch(err){
-        console.error(err);
-        const msg = err && err.code ? (err.code + ' — ' + (err.message||'')) : (err.message||'فشل الإنشاء');
-        showRegError(msg);
-      }finally{
-        btn.disabled = false; btn.textContent = prev;
-      }
-    });
+    $('doRegister').addEventListener('click', async ()=>{ showRegError(''); showRegInfo(''); const email = $('regEmail').value.trim(); const display = $('regDisplayName').value.trim(); const pass = $('regPassword').value; const pass2 = $('regPassword2').value; if(!email || !pass || !pass2){ showRegError('أكمل جميع الحقول'); return; } if(pass.length < 6){ showRegError('كلمة السر يجب أن تكون 6 أحرف على الأقل'); return; } if(pass !== pass2){ showRegError('كلمة السر وتأكيدها غير متطابقين'); return; } const btn = $('doRegister'); btn.disabled = true; const prev = btn.textContent; btn.textContent = '...جارٍ الإنشاء'; try{ const cred = await auth.createUserWithEmailAndPassword(email, pass); if(cred && cred.user && display){ try{ await cred.user.updateProfile({ displayName: display }); }catch(e){ console.warn('updateProfile', e); } } showRegInfo('تم إنشاء الحساب وتسجيل الدخول'); setTimeout(()=>{ $('registerBackdrop').style.display = 'none'; }, 700); }catch(err){ console.error(err); const msg = err && err.code ? (err.code + ' — ' + (err.message||'')) : (err.message||'فشل الإنشاء'); showRegError(msg); }finally{ btn.disabled = false; btn.textContent = prev; } });
 
-    $('forgotPassword').addEventListener('click', async ()=>{
-      const email = $('loginEmail').value.trim() || prompt('أدخل بريدك لإرسال رابط إعادة التعيين:');
-      if(!email){ showAuthError('أدخل البريد أولاً'); return; }
-      try{ await auth.sendPasswordResetEmail(email); showToast('أُرسل رابط إعادة تعيين كلمة السر'); }catch(err){ console.error(err); showAuthError(err.message||'فشل إرسال الرابط'); }
-    });
+    $('forgotPassword').addEventListener('click', async ()=>{ const email = $('loginEmail').value.trim() || prompt('أدخل بريدك لإرسال رابط إعادة التعيين:'); if(!email){ showAuthError('أدخل البريد أولاً'); return; } try{ await auth.sendPasswordResetEmail(email); showToast('أُرسل رابط إعادة تعيين كلمة السر'); }catch(err){ console.error(err); showAuthError(err.message||'فشل إرسال الرابط'); } });
 
     $('btnOpenAuth').addEventListener('click', ()=> $('authBackdrop').style.display = 'flex');
     $('btnLogout').addEventListener('click', async ()=>{ if(!confirm('تسجيل خروج؟')) return; try{ await auth.signOut(); showToast('تم تسجيل الخروج'); }catch(e){ console.error(e); showToast('خطأ'); } });
@@ -938,12 +813,14 @@
     // initial
     renderLists();
 
+    // Search interactions: debounce + button
     const debouncedRender = debounce(renderLists, 120);
     $('search').addEventListener('input', debouncedRender);
     $('searchBtn').addEventListener('click', renderLists);
 
     window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
 
+    // Backdrop close handling
     document.querySelectorAll('.backdrop').forEach(b => {
       b.addEventListener('click', (e)=>{
         if(e.target !== b) return;
@@ -957,7 +834,7 @@
       if(e.key === 'Escape'){
         if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
         if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
-        if($('editBackdrop') && $('editBackdrop').style.display === 'flex') closeEditModal();
+        if($('editBackdrop') && $('editBackdrop').style.display === 'flex') { $('editBackdrop').style.display = 'none'; editingId = null; }
       }
     });
 
