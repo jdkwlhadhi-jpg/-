@@ -26,10 +26,8 @@
     .subtitle{font-size:12px;opacity:.95}
     .header-actions{display:flex;gap:8px;align-items:center}
     .badge{background:rgba(255,255,255,0.12);padding:6px 10px;border-radius:999px;font-weight:800;color:#fff;font-size:13px}
-    .small-badge{background:rgba(255,255,255,0.06);padding:6px 10px;border-radius:10px;font-weight:800;color:#fff;font-size:12px;display:flex;align-items:center;gap:8px}
-    .small-badge strong{display:inline-block;min-width:90px;text-align:left}
     .user-pill{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,0.06);font-weight:800}
-    .btn, .btn-ghost {min-height:44px; padding:10px 12px;border-radius:10px;font-weight:800;border:0;cursor:pointer}
+    .btn, .btn-ghost {min-height:44px;padding:10px 12px;border-radius:10px;font-weight:800;border:0;cursor:pointer}
     .btn{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
     .btn-ghost{background:#fff;color:var(--primary);border:1px solid rgba(6,182,212,0.12)}
     main{margin-top:12px}
@@ -44,7 +42,7 @@
     .field label{font-weight:800;font-size:13px}
     .field input{height:48px;padding:10px;border-radius:10px;border:1px solid #e6eef7;font-size:15px}
     .large{height:56px;padding:12px;font-size:16px}
-    .list{display:flex;flex-direction:column;gap:10px;padding:0;margin:0}
+    .list{display:flex;flex-direction:column;gap:10px;padding:0;margin:0;list-style:none}
     .item{display:flex;flex-direction:row;justify-content:space-between;align-items:center;padding:12px;border-radius:12px;background:linear-gradient(180deg,#fff,#fbfdff);border:1px solid rgba(8,10,17,0.04)}
     .item-left{display:flex;gap:10px;align-items:center;min-width:0}
     .avatar{width:48px;height:48px;border-radius:10px;background:linear-gradient(135deg,#06b6d4,#2563eb);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:900}
@@ -68,37 +66,19 @@
     .muted-small{color:var(--muted);font-size:13px}
     .warning{color:var(--danger);font-weight:800;font-size:13px;margin-top:6px}
     .totals-row{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
-    .totals-badge{
-      background:linear-gradient(180deg,#ffffff,#f6fbfc);
-      border-radius:12px;
-      padding:10px 12px;
-      min-width:160px;
-      box-shadow:0 6px 18px rgba(2,6,23,0.06);
-      display:flex;
-      flex-direction:column;
-      gap:6px;
-      align-items:flex-start;
-    }
+    .totals-badge{background:linear-gradient(180deg,#ffffff,#f6fbfc);border-radius:12px;padding:10px 12px;min-width:160px;box-shadow:0 6px 18px rgba(2,6,23,0.06);display:flex;flex-direction:column;gap:6px;align-items:flex-start;}
     .totals-label{font-size:12px;color:var(--muted);font-weight:800}
     .totals-amount{font-size:20px;font-weight:900;color:#06202a}
-    .totals-amount.profit-positive{color:var(--success)}
-    .totals-amount.profit-negative{color:var(--danger)}
     .people-row{display:flex;align-items:center;gap:10px;margin-top:6px}
-    .count-icon{
-      width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;
-      background:linear-gradient(135deg,#f3f9ff,#e6f7fb);color:var(--primary);font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);
-      flex:0 0 40px;
-    }
+    .count-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f3f9ff,#e6f7fb);color:var(--primary);font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);flex:0 0 40px;}
     .count-number{font-weight:900;color:#06202a}
     .edit-field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
+    .person-tabs{display:flex;gap:6px;align-items:center}
+    .person-tab{padding:6px 10px;border-radius:10px;background:#f6fbfc;border:1px solid #eef7fb;cursor:pointer;font-weight:800}
+    .person-tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
     mark{background:rgba(255,235,59,0.45);padding:0 2px;border-radius:2px}
-    @media(min-width:720px){
-      header{padding:16px}
-      .logo{width:56px;height:56px}
-      .avatar{width:56px;height:56px;border-radius:12px}
-      .modal{width:720px;height:auto;border-radius:12px}
-      .totals-badge{min-width:200px}
-    }
+    @media(min-width:720px){ header{padding:16px} .logo{width:56px;height:56px} .avatar{width:56px;height:56px;border-radius:12px} .modal{width:720px;height:auto;border-radius:12px} .totals-badge{min-width:200px} }
+    .app.hidden { display:none; }
   </style>
 </head>
 <body>
@@ -126,8 +106,6 @@
           <div class="totals-badge" title="إجمالي المتبقي لجميع السجلات" aria-live="polite">
             <div class="totals-label">المتبقي الكلي</div>
             <div id="totalRemainingAll" class="totals-amount">0.00</div>
-
-            <!-- isolated icon with count next to it -->
             <div class="people-row" aria-hidden="false" aria-label="عدد الأشخاص">
               <div class="count-icon" title="عدد الأشخاص" role="img" aria-label="أيقونة أشخاص">👥</div>
               <div><div style="font-size:12px;color:var(--muted)">عدد الأشخاص</div><div id="totalCount" class="count-number">0</div></div>
@@ -141,49 +119,14 @@
         </div>
 
         <div class="add-form">
-          <div class="field">
-            <label for="custName">اسم العميل</label>
-            <input id="custName" class="large" placeholder="اسم العميل" />
-          </div>
-
-          <!-- رقم الهاتف -->
-          <div class="field">
-            <label for="custPhone">هاتف العميل</label>
-            <input id="custPhone" type="tel" placeholder="مثال: 0591234567" />
-          </div>
-
-          <div class="field">
-            <label for="prodName">اسم المنتج</label>
-            <input id="prodName" placeholder="اسم المنتج" />
-          </div>
-
-          <!-- swapped labels/functionality:
-               totalAmt input now represents "نقد" (cash)
-               officialPrice input now represents "أقساط" (installment total)
-          -->
-          <div class="field">
-            <label for="totalAmt">نقد</label>
-            <input id="totalAmt" class="large" type="number" placeholder="المبلغ النقدي" />
-          </div>
-
-          <div class="field">
-            <label for="officialPrice">أقساط</label>
-            <input id="officialPrice" type="number" placeholder="قيمة الأقساط" />
-          </div>
-
-          <div class="field">
-            <label for="downAmt">الدفعة</label>
-            <input id="downAmt" type="number" placeholder="الدفعة" />
-          </div>
-
-          <div class="field">
-            <label for="dueDate">تاريخ الاستحقاق</label>
-            <input id="dueDate" type="date" />
-          </div>
-
-          <div style="display:flex;justify-content:flex-end">
-            <button id="btnAdd" class="btn">أضف</button>
-          </div>
+          <div class="field"><label for="custName">اسم العميل</label><input id="custName" class="large" placeholder="اسم العميل" /></div>
+          <div class="field"><label for="custPhone">هاتف العميل</label><input id="custPhone" type="tel" placeholder="مثال: 0591234567" /></div>
+          <div class="field"><label for="prodName">اسم المنتج</label><input id="prodName" placeholder="اسم المنتج" /></div>
+          <div class="field"><label for="totalAmt">نقد</label><input id="totalAmt" class="large" type="number" placeholder="المبلغ النقدي" /></div>
+          <div class="field"><label for="officialPrice">أقساط</label><input id="officialPrice" type="number" placeholder="قيمة الأقساط" /></div>
+          <div class="field"><label for="downAmt">الدفعة</label><input id="downAmt" type="number" placeholder="الدفعة" /></div>
+          <div class="field"><label for="dueDate">تاريخ الاستحقاق</label><input id="dueDate" type="date" /></div>
+          <div style="display:flex;justify-content:flex-end"><button id="btnAdd" class="btn">أضف</button></div>
         </div>
 
         <div class="search-row" style="justify-content:flex-start">
@@ -202,15 +145,44 @@
     </main>
   </div>
 
-  <!-- Detail modal -->
+  <!-- Detail modal with add-person restored -->
   <div id="detailBackdrop" class="backdrop" style="display:none">
     <div class="modal" role="dialog" aria-modal="true">
-      <div style="display:flex;justify-content:space-between;align-items:center">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <h3 id="detailTitle">تفاصيل السجل</h3>
-        <button id="closeDetail" class="btn-ghost">إغلاق</button>
+        <div style="display:flex;gap:8px;align-items:center">
+          <div class="person-controls" style="align-items:center">
+            <button id="prevPerson" class="btn-ghost-small" title="الشخص السابق">◀</button>
+            <div id="peopleTabs" class="person-tabs" aria-live="polite" style="min-width:160px"></div>
+            <button id="nextPerson" class="btn-ghost-small" title="الشخص التالي">▶</button>
+            <button id="addPersonBtn" class="btn-ghost-small" title="إضافة شخص">＋</button>
+          </div>
+          <button id="closeDetailTop" class="btn-ghost" title="إغلاق سريع">إغلاق</button>
+        </div>
       </div>
 
       <div style="margin-top:12px">
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
+          <select id="personSelect" style="flex:1;height:44px;border-radius:8px;border:1px solid #e6eef7;padding:8px"></select>
+          <button id="editPersonToggle" class="btn-ghost-small">تعديل الشخص</button>
+          <button id="deletePersonBtn" class="btn-ghost-small" style="background:transparent;border-color:rgba(239,68,68,0.12);color:var(--danger)">حذف شخص</button>
+        </div>
+
+        <div id="personEditArea" style="display:none;border:1px dashed #e6eef7;padding:12px;border-radius:10px;margin-bottom:12px">
+          <div class="field"><label>اسم الشخص</label><input id="personNameInput" class="large" placeholder="أدخل اسم الشخص" /></div>
+          <div class="field"><label>هاتف</label><input id="personPhoneInput" class="large" /></div>
+          <div class="field"><label>اسم المنتج</label><input id="personProdInput" class="large" /></div>
+          <div class="field"><label>نقد</label><input id="personCashInput" class="large" type="number" /></div>
+          <div class="field"><label>أقساط</label><input id="personInstallmentsInput" class="large" type="number" /></div>
+          <div class="field"><label>الدفعة</label><input id="personDownInput" class="large" type="number" /></div>
+          <div class="field"><label>تاريخ الاستحقاق</label><input id="personDueInput" class="large" type="date" /></div>
+
+          <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
+            <button id="savePersonBtn" class="btn">حفظ الشخص</button>
+            <button id="cancelPersonEditBtn" class="btn-ghost">إلغاء</button>
+          </div>
+        </div>
+
         <div class="muted-small">العميل</div>
         <div id="d_name" style="font-weight:900;margin-top:6px"></div>
 
@@ -247,16 +219,19 @@
           <div id="payWarning" class="warning" style="display:none">المبلغ لا يكفي أو أكبر من المتبقي</div>
         </div>
 
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px">
-          <button id="savePay" class="btn-detail">حفظ</button>
-          <button id="editFromDetail" class="btn-ghost-small">تعديل</button>
-          <button id="deleteRec" class="btn-delete">حذف نهائي</button>
+        <div class="detail-actions" role="toolbar" aria-label="أزرار الإجراء">
+          <div class="row"><button id="savePay" class="btn">حفظ الدفعة</button></div>
+          <div class="row">
+            <button id="editFromDetail" class="btn-ghost">تعديل السجل</button>
+            <button id="closeDetailBottom" class="btn-ghost-small">إغلاق</button>
+            <button id="deleteRec" class="btn-delete">حذف نهائي</button>
+          </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- Edit modal -->
+  <!-- Edit & Auth modals -->
   <div id="editBackdrop" class="backdrop" style="display:none">
     <div class="modal" role="dialog" aria-modal="true">
       <div style="display:flex;justify-content:space-between;align-items:center">
@@ -284,7 +259,6 @@
     </div>
   </div>
 
-  <!-- Auth & register modals -->
   <div id="authBackdrop" class="backdrop" style="display:flex">
     <div class="modal" role="dialog" aria-modal="true" style="border-radius:12px;max-width:480px;margin:22px;">
       <div style="display:flex;align-items:center;gap:12px;padding:8px 4px;border-bottom:1px solid #eef7fb">
@@ -296,7 +270,7 @@
       </div>
 
       <div style="padding:12px">
-        <div id="authError" class="error" style="display:none"></div>
+        <div id="authError" class="error" style="display:none;color:var(--danger);margin-bottom:8px"></div>
         <div class="field"><input id="loginEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email" /></div>
         <div class="field" style="margin-top:8px;position:relative">
           <input id="loginPassword" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
@@ -323,22 +297,10 @@
       <div style="padding:12px">
         <div id="regError" class="error" style="display:none"></div>
         <div id="regInfo" class="info" style="display:none"></div>
-        <div class="field">
-          <label for="regEmail">البريد الإلكتروني</label>
-          <input id="regEmail" type="email" placeholder="example@domain.com" autocomplete="email" />
-        </div>
-        <div class="field">
-          <label for="regDisplayName">اسم العرض</label>
-          <input id="regDisplayName" placeholder="الاسم الذي سيظهر" />
-        </div>
-        <div class="field">
-          <label for="regPassword">كلمة المرور</label>
-          <input id="regPassword" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" />
-        </div>
-        <div class="field">
-          <label for="regPassword2">تأكيد كلمة المرور</label>
-          <input id="regPassword2" type="password" placeholder="أعد إدخال كلمة المرور" />
-        </div>
+        <div class="field"><label for="regEmail">البريد الإلكتروني</label><input id="regEmail" type="email" placeholder="example@domain.com" autocomplete="email" /></div>
+        <div class="field"><label for="regDisplayName">اسم العرض</label><input id="regDisplayName" placeholder="الاسم الذي سيظهر" /></div>
+        <div class="field"><label for="regPassword">كلمة المرور</label><input id="regPassword" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" /></div>
+        <div class="field"><label for="regPassword2">تأكيد كلمة المرور</label><input id="regPassword2" type="password" placeholder="أعد إدخال كلمة المرور" /></div>
         <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
           <button id="closeRegister" class="btn-ghost">إلغاء</button>
           <button id="doRegister" class="btn">إنشاء الحساب</button>
@@ -355,7 +317,7 @@
   <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore-compat.js"></script>
 
   <script>
-    // Firebase config
+    // Firebase config (replace with your project's config if needed)
     const firebaseConfig = {
       apiKey: "AIzaSyCUe4KjsenF2RRTBYx7CvO2DyGJpQkuHPY",
       authDomain: "hadi-2f066.firebaseapp.com",
@@ -367,7 +329,6 @@
     firebase.initializeApp(firebaseConfig);
     const auth = firebase.auth();
     const db = firebase.firestore();
-    auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL).catch(()=>{});
 
     // Helpers
     const $ = id => document.getElementById(id);
@@ -377,23 +338,137 @@
     function showRegInfo(msg){ const el=$('regInfo'); el.textContent=msg; el.style.display = msg ? 'block':'none'; }
     function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
     function genId(){ try{return (crypto && crypto.randomUUID)?crypto.randomUUID():'r_'+Date.now()+'_'+Math.floor(Math.random()*1000000)}catch(e){return 'r_'+Date.now()} }
-
     function escapeRegExp(s){ return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
-
-    function escapeHtml(str){
-      if(!str) return '';
-      return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
-    }
-
-    function normalizeText(s){
-      if(!s) return '';
-      return s.toString().toLowerCase().trim()
-        .replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g,'')
-        .replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ـ/g,'').replace(/\s+/g,' ');
-    }
-
+    function escapeHtml(str){ if(!str) return ''; return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function normalizeText(s){ if(!s) return ''; return s.toString().toLowerCase().trim().replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ـ/g,'').replace(/\s+/g,' '); }
     function getSearchTokens(q){ if(!q) return []; return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean); }
 
+    // Local state & sync
+    const KEY='debt_app_v_mobile';
+    function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
+    function saveLocal(recordsToSave){ localStorage.setItem(KEY, JSON.stringify(recordsToSave)); }
+    let records = loadLocal();
+    let currentUser = null;
+    let activeDetailId = null;
+    let activePersonIndex = 0;
+    let isAddingPerson = false;
+    let cloudUnsub = null;
+
+    function tsToMillis(t){ if(!t) return 0; if(typeof t === 'number') return t; if(typeof t === 'string'){ const p = Date.parse(t); return isNaN(p)?0:p; } if(typeof t.toMillis === 'function'){ try{ return t.toMillis(); }catch(e){ return 0; } } return 0; }
+
+    function mergeRecords(local, cloud){
+      const map = new Map();
+      (local||[]).forEach(r=> map.set(r.id || r.createdAt || JSON.stringify(r), r));
+      (cloud||[]).forEach(r=>{
+        const key = r.id || r.createdAt || JSON.stringify(r);
+        if(map.has(key)){
+          const existing = map.get(key);
+          const aTime = tsToMillis(existing.updatedAt || existing.createdAt || '');
+          const bTime = tsToMillis(r.updatedAt || r.createdAt || '');
+          if(!aTime || (bTime && bTime > aTime)) map.set(key, r);
+        } else map.set(key, r);
+      });
+      return Array.from(map.values()).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
+    }
+
+    // Cloud write / sync (only active when logged in)
+    function scheduleCloudSave(){ if(window._pendingSave) clearTimeout(window._pendingSave); window._pendingSave = setTimeout(()=> writeCloud(), 700); }
+    async function writeCloud(){ if(!auth.currentUser) return; const ref = db.doc('users/' + auth.currentUser.uid); try{ await ref.set({ profile:{ displayName: auth.currentUser.displayName || auth.currentUser.email }, records: records, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); }catch(e){ console.error('writeCloud err', e); } }
+
+    function startCloudListener(uid){ stopCloudListener(); const ref = db.doc('users/' + uid); cloudUnsub = ref.onSnapshot(snap=>{ if(!snap.exists) return; const data = snap.data() || {}; const cloud = data.records || []; records = mergeRecords(records || [], cloud || []); saveLocal(records); renderLists(); }, err=>console.error(err)); }
+    function stopCloudListener(){ if(typeof cloudUnsub === 'function'){ cloudUnsub(); cloudUnsub = null; } }
+
+    async function syncWithCloud(showToastOnSuccess = true){
+      if(!auth.currentUser){ if(showToastOnSuccess) showToast('سجل الدخول للمزامنة'); return false; }
+      try{
+        const ref = db.doc('users/' + auth.currentUser.uid);
+        const snap = await ref.get();
+        const cloud = snap && snap.exists ? (snap.data().records || []) : [];
+        records = mergeRecords(records || [], cloud);
+        saveLocal(records);
+        if(showToastOnSuccess) showToast('تمت المزامنة');
+        return true;
+      }catch(err){ console.error('sync error', err); if(showToastOnSuccess) showToast('فشل المزامنة'); return false; }
+    }
+
+    // Ensure people structure
+    function ensurePeopleOnRecord(rec){
+      if(!rec) return;
+      if(!rec.people || !Array.isArray(rec.people) || rec.people.length === 0){
+        const p = {
+          id: genId(),
+          customerName: rec.customerName || 'غير معروف',
+          phone: rec.phone || '',
+          productName: rec.productName || '',
+          totalAmount: rec.totalAmount || 0,
+          officialPrice: rec.officialPrice || 0,
+          downPayment: rec.downPayment || 0,
+          dueDate: rec.dueDate || '',
+          payments: rec.payments ? (Array.isArray(rec.payments) ? rec.payments.slice() : []) : [],
+          lastPayment: null
+        };
+        rec.people = [p];
+      }
+    }
+
+    function isOverdueBy30(record){
+      if(!record) return false;
+      // if people exist, consider any person overdue
+      if(record.people && Array.isArray(record.people) && record.people.length){
+        return record.people.some(p=>{
+          if(!p.dueDate) return false;
+          const due = new Date(p.dueDate + 'T00:00:00'), today = new Date();
+          const diff = Math.floor((today - due)/(1000*60*60*24));
+          const paid = (p.payments||[]).reduce((s,x)=> s + Number(x.amount), 0);
+          const principal = Math.max(0, Number(p.totalAmount||0) - Number(p.downPayment||0));
+          const remaining = Math.max(principal - paid, 0);
+          return diff >= 30 && remaining > 0;
+        });
+      }
+      if(!record.dueDate) return false;
+      const due = new Date(record.dueDate + 'T00:00:00'), today = new Date();
+      const diff = Math.floor((today - due)/(1000*60*60*24));
+      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
+      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
+      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+      if(!(diff >= 30 && remaining > 0)) return false;
+      const payments = (record.payments||[]).map(p => p && p.date ? p.date : null).filter(Boolean);
+      if(payments.length){
+        let latest = payments.reduce((a,b) => a > b ? a : b, payments[0]);
+        const latestDate = new Date(latest + 'T00:00:00');
+        if(!isNaN(latestDate.getTime()) && latestDate > due) return false;
+      }
+      return true;
+    }
+
+    // Totals: sum per-person remaining if present
+    function updateTotals(){
+      let totalRemaining = 0;
+      let peopleCount = 0;
+
+      (records||[]).forEach(r=>{
+        if(r.people && Array.isArray(r.people) && r.people.length){
+          r.people.forEach(p=>{
+            const paid = (p.payments||[]).reduce((s,pp)=> s + Number(pp.amount), 0);
+            const principal = Math.max(0, Number(p.totalAmount||0) - Number(p.downPayment||0));
+            const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+            totalRemaining += remaining;
+            peopleCount++;
+          });
+        } else {
+          const paid = (r.payments||[]).reduce((s,pp)=> s + Number(pp.amount), 0);
+          const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
+          const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+          totalRemaining += remaining;
+          peopleCount++;
+        }
+      });
+
+      if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
+      if($('totalCount')) $('totalCount').textContent = peopleCount;
+    }
+
+    // Search & highlight helpers
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
       const customer = normalizeText(record.customerName || '');
@@ -402,7 +477,6 @@
       if(!first) return false;
       return tokens.every(token => first.startsWith(token));
     }
-
     function highlightText(original, tokens){
       if(!original || !tokens || tokens.length===0) return escapeHtml(original || '');
       try{
@@ -430,91 +504,7 @@
       }
     }
 
-    // Debounce
-    function debounce(fn, wait){ let h = null; return function(...args){ if(h) clearTimeout(h); h = setTimeout(()=>{ fn.apply(this,args); h=null; }, wait); }; }
-
-    // Local state & sync
-    const KEY='debt_app_v_mobile';
-    function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
-    function saveLocal(v){ localStorage.setItem(KEY, JSON.stringify(v)); }
-    let records = loadLocal();
-    let currentUser = null;
-    let activeDetailId = null;
-    let cloudUnsub = null;
-
-    function tsToMillis(t){
-      if(!t) return 0;
-      if(typeof t === 'number') return t;
-      if(typeof t === 'string'){ const p = Date.parse(t); return isNaN(p)?0:p; }
-      if(typeof t.toMillis === 'function'){ try{ return t.toMillis(); }catch(e){ return 0; } }
-      return 0;
-    }
-
-    function isOverdueBy30(record){
-      if(!record || !record.dueDate) return false;
-      const due = new Date(record.dueDate + 'T00:00:00'), today = new Date();
-      const diff = Math.floor((today - due)/(1000*60*60*24));
-      const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
-      const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
-      const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-      if(!(diff >= 30 && remaining > 0)) return false;
-      const payments = (record.payments||[]).map(p => p && p.date ? p.date : null).filter(Boolean);
-      if(payments.length){
-        let latest = payments.reduce((a,b) => a > b ? a : b, payments[0]);
-        const latestDate = new Date(latest + 'T00:00:00');
-        if(!isNaN(latestDate.getTime()) && latestDate > due) return false;
-      }
-      return true;
-    }
-
-    function mergeRecords(local, cloud){
-      const map = new Map();
-      (local||[]).forEach(r=> map.set(r.id || r.createdAt || JSON.stringify(r), r));
-      (cloud||[]).forEach(r=>{
-        const key = r.id || r.createdAt || JSON.stringify(r);
-        if(map.has(key)){
-          const existing = map.get(key);
-          const aTime = tsToMillis(existing.updatedAt || existing.createdAt || '');
-          const bTime = tsToMillis(r.updatedAt || r.createdAt || '');
-          if(!aTime || (bTime && bTime > aTime)) map.set(key, r);
-        } else map.set(key, r);
-      });
-      return Array.from(map.values()).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
-    }
-
-    function scheduleCloudSave(){ if(window._pendingSave) clearTimeout(window._pendingSave); window._pendingSave = setTimeout(()=> writeCloud(), 700); }
-    async function writeCloud(){ if(!auth.currentUser) return; const ref = db.doc('users/' + auth.currentUser.uid); try{ await ref.set({ profile:{ displayName: auth.currentUser.displayName || auth.currentUser.email }, records: records, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); }catch(e){ console.error(e); } }
-
-    function startCloudListener(uid){ stopCloudListener(); const ref = db.doc('users/' + uid); cloudUnsub = ref.onSnapshot(snap=>{ if(!snap.exists) return; const data = snap.data() || {}; const cloud = data.records || []; records = mergeRecords(records || [], cloud || []); saveLocal(records); renderLists(); }, err=>console.error(err)); }
-    function stopCloudListener(){ if(typeof cloudUnsub === 'function'){ cloudUnsub(); cloudUnsub = null; } }
-
-    async function syncWithCloud(showToastOnSuccess = true){
-      if(!auth.currentUser){ if(showToastOnSuccess) showToast('سجل الدخول للمزامنة'); return false; }
-      try{
-        const ref = db.doc('users/' + auth.currentUser.uid);
-        const snap = await ref.get();
-        const cloud = snap && snap.exists ? (snap.data().records || []) : [];
-        records = mergeRecords(records || [], cloud);
-        saveLocal(records);
-        if(showToastOnSuccess) showToast('تمت المزامنة');
-        return true;
-      }catch(err){ console.error('sync error', err); if(showToastOnSuccess) showToast('فشل المزامنة'); return false; }
-    }
-
-    function updateTotals(){
-      let totalRemaining = 0;
-      (records||[]).forEach(r=>{
-        const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
-        const totalAmount = Number(r.totalAmount||0);
-        const down = Number(r.downPayment||0);
-        const principal = Math.max(0, totalAmount - down);
-        const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-        totalRemaining += remaining;
-      });
-      if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
-      if($('totalCount')) $('totalCount').textContent = (records || []).length;
-    }
-
+    // Render lists
     function renderLists(){
       const q = ($('search').value||'').trim();
       const tokens = getSearchTokens(q);
@@ -523,6 +513,7 @@
       const activeArr = (records||[]).filter(r=> !isOverdueBy30(r) && recordMatches(r, tokens));
       $('emptyActive').style.display = activeArr.length ? 'none':'block';
       activeArr.forEach(r=>{
+        // compute remaining (top-level fallback)
         const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
         const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
         const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
@@ -586,35 +577,42 @@
           </div>`;
         overdueList.appendChild(li);
       });
+
       $('overdueCountHeader').textContent = overdueArr.length;
       saveLocal(records);
       updateTotals();
     }
 
-    // Delegated actions
-    document.addEventListener('click', async (e)=>{
+    // Delegation for list buttons
+    document.addEventListener('click', (e)=>{
       const btn = e.target.closest('button');
       if(!btn) return;
       const id = btn.dataset.id, action = btn.dataset.action;
+      if(btn.dataset.payid){
+        const payId = btn.dataset.payid;
+        records.forEach(rec=>{
+          (rec.payments||[]).forEach((p, idx)=>{
+            if(p.id === payId){
+              if(!confirm('حذف هذه الدفعة نهائياً؟')) return;
+              rec.payments.splice(idx,1);
+              rec.updatedAt = new Date().toISOString();
+              saveLocal(records);
+              scheduleCloudSave();
+              renderLists();
+              showToast('حُذفت الدفعة');
+            }
+          });
+        });
+        return;
+      }
       if(!action) return;
       if(action === 'view'){ openDetail(id); return; }
       if(action === 'pay'){ openDetail(id, true); return; }
       if(action === 'edit'){ openEdit(id); return; }
     });
 
-    async function deleteRecordPermanent(id){
-      if(!confirm('هل تريد حذف هذا السجل نهائياً؟ لا يمكن التراجع.')) return;
-      const idx = records.findIndex(r=> r.id === id);
-      if(idx !== -1) records.splice(idx,1);
-      saveLocal(records);
-      renderLists();
-      await writeCloud();
-      showToast('تم الحذف نهائياً');
-    }
-
-    // Add record (swapped fields: totalAmt = cash, officialPrice = installments)
+    // Add record (works locally; will sync automatically when logged in)
     $('btnAdd').addEventListener('click', async ()=>{
-      if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim();
       const phone = $('custPhone').value.trim();
       const prod = $('prodName').value.trim();
@@ -624,97 +622,250 @@
       const due = $('dueDate').value || null;
       if(!cust || !prod || isNaN(installments) || installments <= 0){ alert('أكمل الحقول بشكل صحيح'); return; }
       if(down > installments){ alert('الدفعة أكبر من المبلغ'); return; }
-      if(phone){
-        const clean = phone.replace(/\s+/g,'');
-        if(!/^\+?\d{7,15}$/.test(clean) && !/^0?5\d{8}$/.test(clean)){
-          if(!confirm('صيغة رقم الهاتف غير مألوفة. أضف الرقم على أي حال؟')) return;
-        }
-      }
       const rec = {
-        id: genId(), customerName: cust, phone: phone || '', productName: prod,
-        totalAmount: installments, officialPrice: cash, downPayment: down || 0, dueDate: due,
-        payments: [], createdAt: new Date().toISOString(), updatedAt: new Date().toISOString()
+        id: genId(),
+        customerName: cust,
+        phone: phone || '',
+        productName: prod,
+        totalAmount: installments,
+        officialPrice: cash,
+        downPayment: down || 0,
+        dueDate: due,
+        payments: [],
+        people: [{
+          id: genId(),
+          customerName: cust,
+          phone: phone || '',
+          productName: prod,
+          totalAmount: installments,
+          officialPrice: cash,
+          downPayment: down || 0,
+          dueDate: due,
+          payments: []
+        }],
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString()
       };
-      records.unshift(rec); saveLocal(records); scheduleCloudSave(); renderLists();
+      records.unshift(rec);
+      saveLocal(records);
+      scheduleCloudSave();
+      renderLists();
       $('custName').value=''; $('custPhone').value=''; $('prodName').value=''; $('totalAmt').value=''; $('officialPrice').value=''; $('downAmt').value=''; $('dueDate').value='';
       showToast('تمت الإضافة');
     });
 
-    // Detail & payments
-    function openDetail(id, focusPay=false){
-      const r = records.find(x=> x.id === id); if(!r) return;
-      activeDetailId = id;
-      $('d_name').textContent = r.customerName;
-      $('d_phone').textContent = r.phone || '-';
-      $('d_product').textContent = r.productName;
-      $('d_due').textContent = r.dueDate || '-';
-      $('d_total').textContent = formatMoney(r.totalAmount);
-      $('d_down').textContent = formatMoney(r.downPayment||0);
-      $('d_official').textContent = r.officialPrice ? formatMoney(r.officialPrice) : '-';
-      const paid = (r.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
-      const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
-      const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-      $('d_remaining').textContent = formatMoney(remaining);
-      const percent = principal>0? Math.round(((principal-remaining)/principal)*100):0;
+    // People / detail functions
+    function renderPeopleTabsForRecord(rec){
+      const tabs = $('peopleTabs'); if(!tabs) return;
+      tabs.innerHTML='';
+      const sel = $('personSelect'); if(!sel) return; sel.innerHTML='';
+      (rec.people||[]).forEach((p, idx)=>{
+        const div = document.createElement('div');
+        div.className = 'person-tab' + (idx === activePersonIndex ? ' active' : '');
+        div.textContent = p.customerName || ('شخص ' + (idx+1));
+        div.dataset.idx = idx;
+        div.addEventListener('click', ()=> selectPerson(rec.id, Number(div.dataset.idx)));
+        tabs.appendChild(div);
+        const opt = document.createElement('option');
+        opt.value = idx; opt.textContent = p.customerName || ('شخص ' + (idx+1));
+        sel.appendChild(opt);
+      });
+      sel.value = activePersonIndex;
+    }
+
+    function selectPerson(recordId, idx){
+      const rec = records.find(r=> r.id === recordId);
+      if(!rec || !rec.people || !rec.people[idx]) return;
+      activePersonIndex = idx;
+      renderPeopleTabsForRecord(rec);
+      renderPersonDetails(rec, rec.people[idx]);
+    }
+
+    function renderPersonDetails(rec, person){
+      $('d_name').textContent = person.customerName || '-';
+      $('d_phone').textContent = person.phone || '-';
+      $('d_product').textContent = person.productName || '-';
+      $('d_due').textContent = person.dueDate || '-';
+      $('d_total').textContent = formatMoney(person.totalAmount||0);
+      $('d_down').textContent = formatMoney(person.downPayment||0);
+      $('d_official').textContent = person.officialPrice ? formatMoney(person.officialPrice) : '-';
+      const paid = (person.payments||[]).reduce((s,x)=> s + Number(x.amount),0);
+      const principal = Math.max(0, Number(person.totalAmount||0) - Number(person.downPayment||0));
+      const rem = Math.max(Math.round((principal-paid)*100)/100,0);
+      $('d_remaining').textContent = formatMoney(rem);
+      const percent = principal > 0 ? Math.round(((principal - rem)/principal)*100) : 0;
       $('d_progress').style.width = Math.min(Math.max(percent,0),100) + '%';
-      $('paymentsList').innerHTML = '';
-      (r.payments||[]).slice().reverse().forEach(p=>{
+
+      const list = $('paymentsList'); list.innerHTML='';
+      (person.payments||[]).slice().reverse().forEach(p=>{
         const div = document.createElement('div'); div.className='payment-item';
         div.innerHTML = `<div><strong>${formatMoney(p.amount)}</strong><div style="color:var(--muted)">${escapeHtml(p.date||'')}</div></div><div><button class="btn-ghost-small" data-payid="${p.id}">حذف</button></div>`;
-        $('paymentsList').appendChild(div);
-        div.querySelector('button').addEventListener('click', async ()=>{
+        list.appendChild(div);
+        div.querySelector('button').addEventListener('click', ()=>{
           if(!confirm('حذف هذه الدفعة نهائياً؟')) return;
-          r.payments = (r.payments||[]).filter(pp=> pp.id !== p.id);
-          r.updatedAt = new Date().toISOString();
+          person.payments = (person.payments||[]).filter(pp=> pp.id !== p.id);
           saveLocal(records);
-          await writeCloud();
-          openDetail(id); renderLists(); showToast('حُذفت الدفعة');
+          scheduleCloudSave();
+          renderLists();
+          openDetail(rec.id);
+          showToast('حُذفت الدفعة');
         });
       });
-      $('paymentsCount').textContent = (r.payments? r.payments.length:0) + ' دفعات';
+      $('paymentsCount').textContent = (person.payments||[]).length + ' دفعات';
       $('payAmount').value = '';
       $('payDate').value = new Date().toISOString().slice(0,10);
       $('payWarning').style.display = 'none';
-      $('detailBackdrop').style.display = 'flex';
-      $('deleteRec').onclick = async ()=>{ await deleteRecordPermanent(activeDetailId); $('detailBackdrop').style.display = 'none'; }
-      // edit button inside detail opens same edit modal
+    }
+
+    // openDetail includes addPerson behavior (now works locally even if not logged in;
+    // changes sync when user is logged in)
+    function openDetail(id, focusPay=false){
+      const r = records.find(x=> x.id === id); if(!r) return;
+      activeDetailId = id;
+      isAddingPerson = false;
+      ensurePeopleOnRecord(r);
+      if(activePersonIndex < 0 || activePersonIndex >= r.people.length) activePersonIndex = 0;
+      renderPeopleTabsForRecord(r);
+      renderPersonDetails(r, r.people[activePersonIndex]);
+
+      const personSelect = $('personSelect');
+      if(personSelect) personSelect.onchange = function(){ selectPerson(r.id, Number(this.value)); };
+
+      // Add person button (no longer blocks on login)
+      const topAddBtn = $('addPersonBtn');
+      if(topAddBtn){
+        topAddBtn.onclick = (e)=>{
+          e.preventDefault();
+          isAddingPerson = true;
+          const area = $('personEditArea');
+          $('personNameInput').value = '';
+          $('personPhoneInput').value = '';
+          $('personProdInput').value = '';
+          $('personCashInput').value = '';
+          $('personInstallmentsInput').value = '';
+          $('personDownInput').value = '';
+          $('personDueInput').value = '';
+          area.style.display = 'block';
+          setTimeout(()=> $('personNameInput').focus(), 120);
+        };
+      }
+
+      if($('prevPerson')) $('prevPerson').onclick = ()=> selectPerson(r.id, Math.max(0, activePersonIndex-1));
+      if($('nextPerson')) $('nextPerson').onclick = ()=> selectPerson(r.id, Math.min(r.people.length-1, activePersonIndex+1));
+
+      if($('editPersonToggle')) $('editPersonToggle').onclick = ()=>{
+        const area = $('personEditArea');
+        if(area.style.display === 'none'){
+          isAddingPerson = false;
+          const p = r.people[activePersonIndex];
+          $('personNameInput').value = p.customerName || '';
+          $('personPhoneInput').value = p.phone || '';
+          $('personProdInput').value = p.productName || '';
+          $('personCashInput').value = p.officialPrice || '';
+          $('personInstallmentsInput').value = p.totalAmount || '';
+          $('personDownInput').value = p.downPayment || '';
+          $('personDueInput').value = p.dueDate || '';
+          area.style.display = 'block';
+          setTimeout(()=> $('personNameInput').focus(), 120);
+        } else {
+          area.style.display = 'none';
+        }
+      };
+
+      if($('cancelPersonEditBtn')) $('cancelPersonEditBtn').onclick = ()=> { $('personEditArea').style.display = 'none'; isAddingPerson = false; };
+
+      if($('savePersonBtn')) $('savePersonBtn').onclick = ()=>{
+        const recx = records.find(r=> r.id === id); if(!recx) return;
+        const name = $('personNameInput').value.trim();
+        const phone = $('personPhoneInput').value.trim();
+        const prod = $('personProdInput').value.trim();
+        const cash = parseFloat($('personCashInput').value||0) || 0;
+        const installments = parseFloat($('personInstallmentsInput').value);
+        const down = parseFloat($('personDownInput').value||0) || 0;
+        const due = $('personDueInput').value || null;
+        if(!name || !prod || isNaN(installments) || installments <= 0){ alert('أكمل الحقول الأساسية (الاسم، المنتج، الأقساط)'); return; }
+        if(down > installments){ alert('الدفعة أكبر من قيمة الأقساط'); return; }
+
+        if(isAddingPerson){
+          const newP = { id: genId(), customerName: name, phone: phone||'', productName: prod, totalAmount: installments, officialPrice: cash, downPayment: down, dueDate: due, payments: [], lastPayment: null };
+          recx.people = recx.people || [];
+          recx.people.push(newP);
+          recx.updatedAt = new Date().toISOString();
+          saveLocal(records);
+          scheduleCloudSave();
+          isAddingPerson = false;
+          activePersonIndex = recx.people.length - 1;
+          renderPeopleTabsForRecord(recx);
+          selectPerson(recx.id, activePersonIndex);
+          $('personEditArea').style.display = 'none';
+          renderLists();
+          showToast('أضيف شخص جديد');
+        } else {
+          const p = recx.people[activePersonIndex];
+          if(!p) return;
+          p.customerName = name; p.phone = phone||''; p.productName = prod; p.officialPrice = cash; p.totalAmount = installments; p.downPayment = down; p.dueDate = due;
+          recx.updatedAt = new Date().toISOString();
+          // if editing the primary person (index 0), keep top-level in sync
+          if(activePersonIndex === 0){
+            recx.customerName = p.customerName; recx.phone = p.phone; recx.productName = p.productName;
+            recx.totalAmount = p.totalAmount; recx.officialPrice = p.officialPrice; recx.downPayment = p.downPayment; recx.dueDate = p.dueDate;
+          }
+          saveLocal(records);
+          scheduleCloudSave();
+          $('personEditArea').style.display = 'none';
+          renderPeopleTabsForRecord(recx);
+          renderPersonDetails(recx, p);
+          renderLists();
+          showToast('تم حفظ بيانات الشخص');
+        }
+      };
+
+      if($('deletePersonBtn')) $('deletePersonBtn').onclick = ()=>{
+        const recx = records.find(r=> r.id === id); if(!recx) return;
+        if(!confirm('هل تريد حذف هذا الشخص؟')) return;
+        recx.people.splice(activePersonIndex,1);
+        if(recx.people.length === 0){
+          recx.people.push({ id: genId(), customerName: 'غير معروف', phone:'', productName:'', totalAmount:0, officialPrice:0, downPayment:0, dueDate:'', payments:[], lastPayment: null });
+        }
+        activePersonIndex = Math.min(activePersonIndex, recx.people.length-1);
+        recx.updatedAt = new Date().toISOString();
+        saveLocal(records);
+        scheduleCloudSave();
+        renderPeopleTabsForRecord(recx);
+        selectPerson(recx.id, activePersonIndex);
+        renderLists();
+        showToast('حُذف الشخص');
+      };
+
+      if($('closeDetailTop')) $('closeDetailTop').onclick = ()=> { $('detailBackdrop').style.display = 'none'; isAddingPerson = false; };
+      if($('closeDetailBottom')) $('closeDetailBottom').onclick = ()=> { $('detailBackdrop').style.display = 'none'; isAddingPerson = false; };
+
+      $('deleteRec').onclick = ()=>{ if(!confirm('هل تريد حذف السجل نهائياً؟')) return; records = records.filter(rr=> rr.id !== activeDetailId); saveLocal(records); scheduleCloudSave(); $('detailBackdrop').style.display = 'none'; renderLists(); showToast('تم حذف السجل'); };
       $('editFromDetail').onclick = ()=> openEdit(id);
+
+      $('savePay').onclick = ()=>{
+        const amt = parseFloat($('payAmount').value); if(isNaN(amt)||amt<=0){ alert('أدخل مبلغاً صحيحاً'); return; }
+        const recx = records.find(r=> r.id === activeDetailId); if(!recx) return;
+        ensurePeopleOnRecord(recx);
+        const pers = recx.people[activePersonIndex]; if(!pers) return;
+        const paid = (pers.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
+        const principal = Math.max(0, Number(pers.totalAmount||0) - Number(pers.downPayment||0));
+        const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
+        if(amt > remaining){ alert('المبلغ أكبر من المتبقي'); return; }
+        const date = $('payDate').value || new Date().toISOString().slice(0,10);
+        pers.payments = pers.payments || []; pers.payments.push({ id:'p_'+Date.now(), amount: Math.round(amt*100)/100, date });
+        pers.lastPayment = date;
+        recx.updatedAt = new Date().toISOString();
+        saveLocal(records);
+        scheduleCloudSave();
+        renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
+      };
+
+      $('detailBackdrop').style.display = 'flex';
       if(focusPay) setTimeout(()=> $('payAmount').focus(),160);
     }
 
-    $('closeDetail').addEventListener('click', ()=> $('detailBackdrop').style.display = 'none');
-
-    document.addEventListener('input', (e)=>{
-      if(e.target && e.target.id === 'payAmount'){
-        const val = parseFloat($('payAmount').value || '0');
-        const rec = records.find(r=> r.id === activeDetailId);
-        if(!rec){ $('payWarning').style.display='none'; return; }
-        const paid = (rec.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
-        const principal = Math.max(0, Number(rec.totalAmount||0) - Number(rec.downPayment||0));
-        const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-        if(isNaN(val) || val <= 0){ $('payWarning').textContent = 'أدخل مبلغاً صحيحاً'; $('payWarning').style.display = 'block'; }
-        else if(val > remaining){ $('payWarning').textContent = 'المبلغ أكبر من المتبقي'; $('payWarning').style.display = 'block'; }
-        else { $('payWarning').style.display = 'none'; }
-      }
-    });
-
-    $('savePay').addEventListener('click', async ()=>{
-      if(!activeDetailId) return;
-      const amt = parseFloat($('payAmount').value); if(isNaN(amt)||amt<=0){ alert('أدخل مبلغاً صحيحاً'); return; }
-      const rec = records.find(r=> r.id === activeDetailId); if(!rec) return;
-      const paid = (rec.payments||[]).reduce((s,p)=> s + Number(p.amount),0);
-      const principal = Math.max(0, Number(rec.totalAmount||0) - Number(rec.downPayment||0));
-      const remaining = Math.max(Math.round((principal-paid)*100)/100,0);
-      if(amt > remaining){ alert('المبلغ الذي تحاول إضافته أكبر من المتبقي. عدّل المبلغ أو احذف الدفعات السابقة.'); return; }
-      const date = $('payDate').value || new Date().toISOString().slice(0,10);
-      rec.payments = rec.payments || []; rec.payments.push({ id:'p_'+Date.now(), amount: Math.round(amt*100)/100, date });
-      rec.updatedAt = new Date().toISOString();
-      saveLocal(records);
-      await writeCloud();
-      renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
-    });
-
-    // ----- Edit functionality -----
+    // Edit modal handlers (simple)
     let editingId = null;
     function openEdit(id){
       const r = records.find(x=> x.id === id); if(!r) return;
@@ -723,122 +874,8 @@
       $('editCustName').value = r.customerName || '';
       $('editCustPhone').value = r.phone || '';
       $('editProdName').value = r.productName || '';
-      // editTotalAmt -> cash (totalAmt input previously represented cash)
       $('editTotalAmt').value = r.officialPrice != null ? String(r.officialPrice) : '';
-      // editOfficialPrice -> installments (officialPrice input previously represented installments)
       $('editOfficialPrice').value = r.totalAmount != null ? String(r.totalAmount) : '';
       $('editDownAmt').value = r.downPayment != null ? String(r.downPayment) : '';
       $('editDueDate').value = r.dueDate || '';
-      $('editBackdrop').style.display = 'flex';
-    }
-
-    $('closeEdit').addEventListener('click', ()=> { $('editBackdrop').style.display = 'none'; editingId = null; });
-    $('doCancelEdit').addEventListener('click', ()=> { $('editBackdrop').style.display = 'none'; editingId = null; });
-
-    $('doSaveEdit').addEventListener('click', async ()=>{
-      if(!editingId) return;
-      const rec = records.find(r=> r.id === editingId); if(!rec) return;
-      const name = $('editCustName').value.trim();
-      const phone = $('editCustPhone').value.trim();
-      const prod = $('editProdName').value.trim();
-      const cash = parseFloat($('editTotalAmt').value||0) || 0; // cash
-      const installments = parseFloat($('editOfficialPrice').value);
-      const down = parseFloat($('editDownAmt').value||0);
-      const due = $('editDueDate').value || null;
-      if(!name || !prod || isNaN(installments) || installments <= 0){ $('editError').textContent = 'أكمل الحقول الأساسية (الاسم، المنتج، الأقساط)'; $('editError').style.display = 'block'; return; }
-      if(down > installments){ $('editError').textContent = 'الدفعة أكبر من قيمة الأقساط'; $('editError').style.display = 'block'; return; }
-      // commit changes
-      rec.customerName = name;
-      rec.phone = phone || '';
-      rec.productName = prod;
-      rec.totalAmount = installments; // installments stored in totalAmount
-      rec.officialPrice = cash; // cash stored in officialPrice
-      rec.downPayment = down || 0;
-      rec.dueDate = due;
-      rec.updatedAt = new Date().toISOString();
-      saveLocal(records);
-      await writeCloud();
-      $('editBackdrop').style.display = 'none';
-      editingId = null;
-      renderLists();
-      showToast('تم حفظ التعديلات');
-    });
-
-    // ----- Auth & registration, misc (unchanged) -----
-    $('togglePassword').addEventListener('click', ()=>{ const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password'; $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈'; });
-    $('rememberMe').addEventListener('change', (e)=>{ const mode = e.target.checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; auth.setPersistence(mode).catch(()=>{}); });
-
-    $('doLogin').addEventListener('click', async ()=>{ showAuthError(''); const email = $('loginEmail').value.trim(), pass = $('loginPassword').value; if(!email || !pass){ showAuthError('أكمل الحقول أولاً'); return; } const btn = $('doLogin'); const prev = btn.textContent; btn.textContent = '...جارٍ الدخول'; btn.disabled = true; try{ await auth.signInWithEmailAndPassword(email, pass); showToast('تم تسجيل الدخول'); } catch(err){ console.error(err); showAuthError((err.code||'') + ' — ' + (err.message||'')); } finally{ btn.disabled = false; btn.textContent = prev; } });
-
-    $('openRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'flex'; });
-    $('closeRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'none'; });
-
-    $('doRegister').addEventListener('click', async ()=>{ showRegError(''); showRegInfo(''); const email = $('regEmail').value.trim(); const display = $('regDisplayName').value.trim(); const pass = $('regPassword').value; const pass2 = $('regPassword2').value; if(!email || !pass || !pass2){ showRegError('أكمل جميع الحقول'); return; } if(pass.length < 6){ showRegError('كلمة السر يجب أن تكون 6 أحرف على الأقل'); return; } if(pass !== pass2){ showRegError('كلمة السر وتأكيدها غير متطابقين'); return; } const btn = $('doRegister'); btn.disabled = true; const prev = btn.textContent; btn.textContent = '...جارٍ الإنشاء'; try{ const cred = await auth.createUserWithEmailAndPassword(email, pass); if(cred && cred.user && display){ try{ await cred.user.updateProfile({ displayName: display }); }catch(e){ console.warn('updateProfile', e); } } showRegInfo('تم إنشاء الحساب وتسجيل الدخول'); setTimeout(()=>{ $('registerBackdrop').style.display = 'none'; }, 700); }catch(err){ console.error(err); const msg = err && err.code ? (err.code + ' — ' + (err.message||'')) : (err.message||'فشل الإنشاء'); showRegError(msg); }finally{ btn.disabled = false; btn.textContent = prev; } });
-
-    $('forgotPassword').addEventListener('click', async ()=>{ const email = $('loginEmail').value.trim() || prompt('أدخل بريدك لإرسال رابط إعادة التعيين:'); if(!email){ showAuthError('أدخل البريد أولاً'); return; } try{ await auth.sendPasswordResetEmail(email); showToast('أُرسل رابط إعادة تعيين كلمة السر'); }catch(err){ console.error(err); showAuthError(err.message||'فشل إرسال الرابط'); } });
-
-    $('btnOpenAuth').addEventListener('click', ()=> $('authBackdrop').style.display = 'flex');
-    $('btnLogout').addEventListener('click', async ()=>{ if(!confirm('تسجيل خروج؟')) return; try{ await auth.signOut(); showToast('تم تسجيل الخروج'); }catch(e){ console.error(e); showToast('خطأ'); } });
-
-    function showActiveTab(){ $('tabActive').classList.add('active'); $('tabOverdue').classList.remove('active'); $('listActive').style.display='block'; $('listOverdue').style.display='none'; }
-    function showOverdueTab(){ $('tabOverdue').classList.add('active'); $('tabActive').classList.remove('active'); $('listOverdue').style.display='block'; $('listActive').style.display='none'; }
-    $('tabActive').addEventListener('click', showActiveTab); $('tabOverdue').addEventListener('click', showOverdueTab);
-    $('tabActive').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showActiveTab(); }});
-    $('tabOverdue').addEventListener('keydown', (e)=>{ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); showOverdueTab(); }});
-
-    auth.onAuthStateChanged(async (user)=>{
-      if(user){
-        currentUser = { uid:user.uid, email:user.email, name:user.displayName || (user.email||'').split('@')[0] };
-        $('userPill').textContent = currentUser.name;
-        $('btnLogout').style.display = 'inline-block';
-        $('btnOpenAuth').style.display = 'none';
-        $('authBackdrop').style.display = 'none';
-        $('mainPanel').style.display = 'block';
-        startCloudListener(user.uid);
-        await syncWithCloud(false);
-      } else {
-        currentUser = null;
-        $('userPill').textContent = 'غير مسجل';
-        $('btnLogout').style.display = 'none';
-        $('btnOpenAuth').style.display = 'inline-block';
-        $('authBackdrop').style.display = 'flex';
-        $('mainPanel').style.display = 'none';
-        stopCloudListener();
-      }
-      renderLists();
-    });
-
-    (function removeSeededDemoClients(){ const seededNames=['سارة أحمد','محمود علي','ليلى حسن']; const prevLen = records.length; records = records.filter(r => !seededNames.includes(r.customerName)); if(records.length !== prevLen){ saveLocal(records); showToast('أزيلت عيّنات تجريبية'); } })();
-
-    // initial
-    renderLists();
-
-    // Search interactions: debounce + button
-    const debouncedRender = debounce(renderLists, 120);
-    $('search').addEventListener('input', debouncedRender);
-    $('searchBtn').addEventListener('click', renderLists);
-
-    window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
-
-    // Backdrop close handling
-    document.querySelectorAll('.backdrop').forEach(b => {
-      b.addEventListener('click', (e)=>{
-        if(e.target !== b) return;
-        if(b.id === 'authBackdrop') return;
-        b.style.display = 'none';
-      });
-      b.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => ev.stopPropagation()));
-    });
-
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape'){
-        if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
-        if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
-        if($('editBackdrop') && $('editBackdrop').style.display === 'flex') { $('editBackdrop').style.display = 'none'; editingId = null; }
-      }
-    });
-
-    setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
-  </script>
-</body>
-</html>
+      $('editBackdrop').style.display
