@@ -145,19 +145,18 @@
     </main>
   </div>
 
-  <!-- Detail modal with restored select, edit and delete person options -->
+  <!-- Detail modal with restored select, edit and delete person options.
+       Close control kept only at the top (bottom close button removed).
+       Clicking the backdrop will NOT close the detail modal — only the top close button. -->
   <div id="detailBackdrop" class="backdrop" style="display:none">
     <div class="modal" role="dialog" aria-modal="true">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <h3 id="detailTitle">تفاصيل السجل</h3>
         <div style="display:flex;gap:8px;align-items:center">
           <div class="person-controls" style="align-items:center">
-            <!-- restored select dropdown showing current person and down arrow -->
             <select id="personSelect" style="height:44px;border-radius:10px;border:1px solid #eef7fb;padding:8px;background:#f6fbfc;margin-left:6px"></select>
-            <!-- restored edit and delete buttons -->
             <button id="editPersonToggle" class="btn-ghost-small" title="تعديل الشخص">تعديل الشخص</button>
             <button id="deletePersonBtn" class="btn-ghost-small" title="حذف شخص" style="color:var(--danger);border-color:rgba(239,68,68,0.12);">حذف شخص</button>
-            <!-- keep the + button -->
             <button id="addPersonBtn" class="btn-ghost-small" title="إضافة شخص">＋</button>
           </div>
           <button id="closeDetailTop" class="btn-ghost" title="إغلاق سريع">إغلاق</button>
@@ -220,7 +219,7 @@
           <div class="row"><button id="savePay" class="btn">حفظ الدفعة</button></div>
           <div class="row">
             <button id="editFromDetail" class="btn-ghost">تعديل السجل</button>
-            <button id="closeDetailBottom" class="btn-ghost-small">إغلاق</button>
+            <!-- bottom close removed per request -->
             <button id="deleteRec" class="btn-delete">حذف نهائي</button>
           </div>
         </div>
@@ -585,7 +584,6 @@
       if(!rec || !rec.people || !rec.people[idx]) return;
       activePersonIndex = idx;
       renderPersonDetails(rec, rec.people[idx]);
-      // keep select in sync
       const sel = $('personSelect'); if(sel) sel.value = idx;
     }
 
@@ -742,6 +740,9 @@
         showToast('حُذف الشخص');
       };
 
+      // only top close works for detail modal
+      if($('closeDetailTop')) $('closeDetailTop').onclick = ()=> { $('detailBackdrop').style.display = 'none'; isAddingPerson = false; };
+
       $('savePay').onclick = ()=>{
         const amt = parseFloat($('payAmount').value); if(isNaN(amt)||amt<=0){ alert('أدخل مبلغاً صحيحاً'); return; }
         const recx = records.find(r=> r.id === activeDetailId); if(!recx) return;
@@ -759,6 +760,8 @@
         scheduleCloudSave();
         renderLists(); openDetail(activeDetailId); showToast('تمت إضافة الدفعة');
       };
+
+      $('deleteRec').onclick = ()=>{ if(!confirm('هل تريد حذف السجل نهائياً؟')) return; records = records.filter(rr=> rr.id !== activeDetailId); saveLocal(records); scheduleCloudSave(); $('detailBackdrop').style.display = 'none'; renderLists(); showToast('تم حذف السجل'); };
 
       $('detailBackdrop').style.display = 'flex';
       if(focusPay) setTimeout(()=> $('payAmount').focus(),160);
@@ -888,12 +891,13 @@
       renderLists();
     });
 
-    window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
-
+    // Backdrop click: keep default behavior except do NOT close detailBackdrop by clicking outside.
     document.querySelectorAll('.backdrop').forEach(b => {
       b.addEventListener('click', (e)=>{
         if(e.target !== b) return;
+        // prevent closing detailBackdrop by outside click; keep other backdrops behavior
         if(b.id === 'authBackdrop') return;
+        if(b.id === 'detailBackdrop') return; // <-- only top close button will close detail modal
         b.style.display = 'none';
       });
       b.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => ev.stopPropagation()));
@@ -901,11 +905,15 @@
 
     document.addEventListener('keydown', (e)=>{
       if(e.key === 'Escape'){
-        if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
+        // keep ESC behavior but only close modals except detailBackdrop (user wanted only top)
+        if($('authBackdrop') && $('authBackdrop').style.display === 'flex') $('authBackdrop').style.display = 'none';
         if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
         if($('editBackdrop') && $('editBackdrop').style.display === 'flex') { $('editBackdrop').style.display = 'none'; }
+        // do NOT close detailBackdrop with Escape per user's request "only top"
       }
     });
+
+    window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
 
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
