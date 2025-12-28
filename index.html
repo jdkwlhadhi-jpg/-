@@ -1,3 +1,4 @@
+```html name=index.html
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
@@ -816,4 +817,98 @@
       showAuthError('');
       const email = $('loginEmail').value.trim(), pass = $('loginPassword').value;
       if(!email || !pass){ showAuthError('أكمل الحقول أولاً'); return; }
-      const btn = $('doLogin'); const prev = btn.textContent; btn.t
+      const btn = $('doLogin'); const prev = btn.textContent; btn.textContent = '...جارٍ الدخول'; btn.disabled = true;
+      try{
+        try { const mode = $('rememberMe') && $('rememberMe').checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; await auth.setPersistence(mode); }catch(e){ console.warn('setPersistence failed', e); }
+        await auth.signInWithEmailAndPassword(email, pass);
+        showToast('تم تسجيل الدخول');
+      }catch(err){
+        console.error('signIn error', err);
+        showAuthError((err.code||'') + ' — ' + (err.message||'فشل تسجيل الدخول'));
+      }finally{ btn.disabled = false; btn.textContent = prev; }
+    });
+
+    $('openRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'flex'; $('authBackdrop').style.display = 'none'; });
+    $('closeRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'none'; $('authBackdrop').style.display = 'flex'; });
+
+    $('doRegister').addEventListener('click', async ()=>{
+      showRegError(''); showRegInfo('');
+      const email = $('regEmail').value.trim(); const display = $('regDisplayName').value.trim(); const pass = $('regPassword').value; const pass2 = $('regPassword2').value;
+      if(!email || !pass || !pass2){ showRegError('أكمل جميع الحقول'); return; }
+      if(pass.length < 6){ showRegError('كلمة السر يجب أن تكون 6 أحرف على الأقل'); return; }
+      if(pass !== pass2){ showRegError('كلمة السر وتأكيدها غير متطابقين'); return; }
+      const btn = $('doRegister'); btn.disabled = true; const prev = btn.textContent; btn.textContent = '...جارٍ الإنشاء';
+      try{
+        if(location.protocol === 'file:'){ showRegError('لا يمكن إنشاء حساب عند فتح الملف محلياً. استضف الملف أولاً.'); return; }
+        const cred = await auth.createUserWithEmailAndPassword(email, pass);
+        if(cred && cred.user && display){ try{ await cred.user.updateProfile({ displayName: display }); }catch(e){ console.warn('updateProfile', e); } }
+        showRegInfo('تم إنشاء الحساب وتسجيل الدخول');
+        setTimeout(()=>{ $('registerBackdrop').style.display = 'none'; $('authBackdrop').style.display = 'none'; }, 700);
+      }catch(err){
+        console.error(err);
+        showRegError((err.code||'') + ' — ' + (err.message||'فشل الإنشاء'));
+      }finally{ btn.disabled = false; btn.textContent = prev; }
+    });
+
+    $('forgotPassword').addEventListener('click', async ()=>{ const email = $('loginEmail').value.trim() || prompt('أدخل بريدك لإرسال رابط إعادة التعيين:'); if(!email){ showAuthError('أدخل البريد أولاً'); return; } try{ await auth.sendPasswordResetEmail(email); showToast('أُرسل رابط إعادة تعيين كلمة السر'); }catch(err){ console.error(err); showAuthError(err.message||'فشل إرسال الرابط'); } });
+
+    $('btnLogout').addEventListener('click', async ()=>{ if(!confirm('تسجيل خروج؟')) return; try{ await auth.signOut(); showToast('تم تسجيل الخروج'); }catch(e){ console.error(e); showToast('خطأ'); } });
+
+    function showActiveTab(){ $('tabActive').classList.add('active'); $('tabOverdue').classList.remove('active'); $('listActive').style.display='block'; $('listOverdue').style.display='none'; }
+    function showOverdueTab(){ $('tabOverdue').classList.add('active'); $('tabActive').classList.remove('active'); $('listOverdue').style.display='block'; $('listActive').style.display='none'; }
+    $('tabActive').addEventListener('click', showActiveTab); $('tabOverdue').addEventListener('click', showOverdueTab);
+
+    auth.onAuthStateChanged(async (user)=>{
+      if(user){
+        currentUser = { uid:user.uid, email:user.email, name:user.displayName || (user.email||'').split('@')[0] };
+        $('userPill').textContent = currentUser.name;
+        $('btnLogout').style.display = 'inline-block';
+        $('btnOpenAuth').style.display = 'none';
+        $('authBackdrop').style.display = 'none';
+        $('mainPanel').style.display = 'block';
+        startCloudListener(user.uid);
+        await syncWithCloud(false);
+      } else {
+        currentUser = null;
+        $('userPill').textContent = 'غير مسجل';
+        $('btnLogout').style.display = 'none';
+        $('btnOpenAuth').style.display = 'inline-block';
+        $('authBackdrop').style.display = 'flex';
+        $('mainPanel').style.display = 'none';
+        stopCloudListener();
+      }
+      renderLists();
+    });
+
+    // initial setup
+    document.addEventListener('DOMContentLoaded', ()=>{
+      const debouncedRender = (fn, wait=120)=>{ let h=null; return function(){ if(h) clearTimeout(h); h=setTimeout(()=>{ fn(); h=null; }, wait); }; };
+      $('search')?.addEventListener('input', debouncedRender(renderLists));
+      $('searchBtn')?.addEventListener('click', renderLists);
+      renderLists();
+    });
+
+    window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
+
+    document.querySelectorAll('.backdrop').forEach(b => {
+      b.addEventListener('click', (e)=>{
+        if(e.target !== b) return;
+        if(b.id === 'authBackdrop') return;
+        b.style.display = 'none';
+      });
+      b.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => ev.stopPropagation()));
+    });
+
+    document.addEventListener('keydown', (e)=>{
+      if(e.key === 'Escape'){
+        if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
+        if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
+        if($('editBackdrop') && $('editBackdrop').style.display === 'flex') { $('editBackdrop').style.display = 'none'; }
+      }
+    });
+
+    setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
+  </script>
+</body>
+</html>
+```
