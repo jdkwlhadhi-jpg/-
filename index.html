@@ -57,6 +57,17 @@
     .btn-delete{background:linear-gradient(180deg,#ff5959,#ff2b2b);border-radius:10px;padding:8px 10px;font-weight:900;color:#fff;border:0;cursor:pointer}
     .btn-detail{background:linear-gradient(180deg,#10b981,#06a763);border-radius:10px;padding:8px 10px;font-weight:900;color:#fff;border:0;cursor:pointer}
     .btn-ghost-small{background:transparent;border:1px solid rgba(6,182,212,0.12);padding:8px;border-radius:8px;min-width:60px;text-align:center}
+    /* make add-person button green (only visual change) */
+    #addPersonBtn {
+      background: linear-gradient(180deg,#10b981,#059669);
+      color: #fff;
+      border: 0;
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-weight: 800;
+      box-shadow: 0 6px 18px rgba(16,185,129,0.16);
+    }
+    #addPersonBtn:hover { opacity: 0.95; }
     .backdrop{position:fixed;inset:0;background:rgba(2,6,23,0.55);display:none;align-items:flex-end;justify-content:center;padding:0;z-index:12000}
     .modal{width:100%;height:92vh;background:var(--card);border-top-left-radius:16px;border-top-right-radius:16px;padding:14px;box-shadow:0 -20px 60px rgba(2,6,23,0.18);overflow:auto}
     .modal h3{margin:0}
@@ -144,9 +155,7 @@
     </main>
   </div>
 
-  <!-- Detail modal: restored select, edit and delete person options.
-       Only modification requested: the add-person button text changed from "＋" to "إضافة شخص".
-  -->
+  <!-- Detail modal with select, edit and delete person options; add-person button uses "+" and is styled green -->
   <div id="detailBackdrop" class="backdrop" style="display:none">
     <div class="modal" role="dialog" aria-modal="true">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
@@ -156,8 +165,7 @@
             <select id="personSelect" style="height:44px;border-radius:10px;border:1px solid #eef7fb;padding:8px;background:#f6fbfc;margin-left:6px"></select>
             <button id="editPersonToggle" class="btn-ghost-small" title="تعديل الشخص">تعديل الشخص</button>
             <button id="deletePersonBtn" class="btn-ghost-small" title="حذف شخص" style="color:var(--danger);border-color:rgba(239,68,68,0.12);">حذف شخص</button>
-            <!-- changed text only -->
-            <button id="addPersonBtn" class="btn-ghost-small" title="إضافة شخص">إضافة شخص</button>
+            <button id="addPersonBtn" class="btn-ghost-small" title="إضافة شخص">＋</button>
           </div>
           <button id="closeDetailTop" class="btn-ghost" title="إغلاق سريع">إغلاق</button>
         </div>
@@ -267,7 +275,7 @@
     function normalizeText(s){ if(!s) return ''; return s.toString().toLowerCase().trim().replace(/[\u064B-\u0652\u0670\u06D6-\u06ED]/g,'').replace(/[أإآ]/g,'ا').replace(/ى/g,'ي').replace(/ؤ/g,'و').replace(/ئ/g,'ي').replace(/ـ/g,'').replace(/\s+/g,' '); }
     function getSearchTokens(q){ if(!q) return []; return q.split(/\s+/).map(t=> normalizeText(t)).filter(Boolean); }
 
-    // Local state & core logic (same working version: auth required for adding, cloud sync, etc.)
+    // Local state
     const KEY='debt_app_v_mobile';
     function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
     function saveLocal(v){ localStorage.setItem(KEY, JSON.stringify(v)); }
@@ -350,11 +358,40 @@
       const paid = (record.payments||[]).reduce((s,p)=> s + Number(p.amount), 0);
       const principal = Math.max(0, Number(record.totalAmount||0) - Number(record.downPayment||0));
       const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
-      return diff >= 30 && remaining > 0;
+      if(!(diff >= 30 && remaining > 0)) return false;
+      const payments = (record.payments||[]).map(p => p && p.date ? p.date : null).filter(Boolean);
+      if(payments.length){
+        let latest = payments.reduce((a,b) => a > b ? a : b, payments[0]);
+        const latestDate = new Date(latest + 'T00:00:00');
+        if(!isNaN(latestDate.getTime()) && latestDate > due) return false;
+      }
+      return true;
     }
 
-    // Render & UI handlers (kept as working version)
-    function formatMoney(n){ return Number(n||0).toLocaleString(undefined,{minimumFractionDigits:2,maximumFractionDigits:2}); }
+    function updateTotals(){
+      let totalRemaining = 0;
+      let peopleCount = 0;
+      (records||[]).forEach(r=>{
+        if(r.people && Array.isArray(r.people) && r.people.length){
+          r.people.forEach(p=>{
+            const paid = (p.payments||[]).reduce((s,pp)=> s + Number(pp.amount), 0);
+            const principal = Math.max(0, Number(p.totalAmount||0) - Number(p.downPayment||0));
+            const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+            totalRemaining += remaining;
+            peopleCount++;
+          });
+        } else {
+          const paid = (r.payments||[]).reduce((s,pp)=> s + Number(pp.amount), 0);
+          const principal = Math.max(0, Number(r.totalAmount||0) - Number(r.downPayment||0));
+          const remaining = Math.max(Math.round((principal - paid)*100)/100, 0);
+          totalRemaining += remaining;
+          peopleCount++;
+        }
+      });
+      if($('totalRemainingAll')) $('totalRemainingAll').textContent = formatMoney(totalRemaining);
+      if($('totalCount')) $('totalCount').textContent = peopleCount;
+    }
+
     function recordMatches(record, tokens){
       if(!tokens || tokens.length===0) return true;
       const customer = normalizeText(record.customerName || '');
@@ -363,6 +400,7 @@
       if(!first) return false;
       return tokens.every(token => first.startsWith(token));
     }
+
     function highlightText(original, tokens){
       if(!original || !tokens || tokens.length===0) return escapeHtml(original || '');
       try{
@@ -463,7 +501,7 @@
       updateTotals();
     }
 
-    // Event delegation and modal logic (kept as working, auth-required behavior preserved)
+    // Delegation for list buttons
     document.addEventListener('click', (e)=>{
       const btn = e.target.closest('button');
       if(!btn) return;
@@ -491,7 +529,7 @@
       if(action === 'edit'){ openEdit(id); return; }
     });
 
-    // Add record (requires login)
+    // Add record — requires login (as original)
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim();
@@ -535,7 +573,7 @@
       showToast('تمت الإضافة');
     });
 
-    // Person / detail functions (select + edit + delete + "إضافة شخص" text button)
+    // People / detail functions
     function renderPeopleTabsForRecord(rec){
       const sel = $('personSelect'); if(!sel) return; sel.innerHTML='';
       (rec.people||[]).forEach((p, idx)=>{
@@ -592,7 +630,8 @@
 
     function openDetail(id, focusPay=false){
       const r = records.find(x=> x.id === id); if(!r) return;
-      activeDetailId = id; isAddingPerson = false;
+      activeDetailId = id;
+      isAddingPerson = false;
       ensurePeopleOnRecord(r);
       if(activePersonIndex < 0 || activePersonIndex >= r.people.length) activePersonIndex = 0;
       renderPeopleTabsForRecord(r);
@@ -774,11 +813,14 @@
       showToast('تم حفظ التعديلات');
     });
 
-    // Auth handlers (unchanged, working)
+    // Auth handlers (UI unchanged)
     $('togglePassword').addEventListener('click', ()=>{ const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password'; $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈'; });
     $('rememberMe').addEventListener('change', (e)=>{ const mode = e.target.checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; auth.setPersistence(mode).catch(()=>{}); });
 
-    $('btnOpenAuth').addEventListener('click', ()=> { $('authBackdrop').style.display = 'flex'; setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 120); });
+    $('btnOpenAuth').addEventListener('click', ()=> {
+      $('authBackdrop').style.display = 'flex';
+      setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 120);
+    });
 
     $('doLogin').addEventListener('click', async ()=>{
       showAuthError('');
@@ -847,7 +889,7 @@
       renderLists();
     });
 
-    // initial
+    // initial wiring
     document.addEventListener('DOMContentLoaded', ()=>{
       const debouncedRender = (fn, wait=120)=>{ let h=null; return function(){ if(h) clearTimeout(h); h=setTimeout(()=>{ fn(); h=null; }, wait); }; };
       $('search')?.addEventListener('input', debouncedRender(renderLists));
@@ -877,4 +919,4 @@
     setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
   </script>
 </body>
-</html>
+          </html>
