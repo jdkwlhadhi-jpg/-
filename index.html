@@ -73,7 +73,6 @@
     .count-icon{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#f3f9ff,#e6f7fb);color:var(--primary);font-weight:900;font-size:18px;box-shadow:0 6px 16px rgba(2,6,23,0.06);flex:0 0 40px;}
     .count-number{font-weight:900;color:#06202a}
     .edit-field{display:flex;flex-direction:column;gap:6px;margin-bottom:8px}
-    .person-tabs{display:flex;gap:6px;align-items:center}
     .person-tab{padding:6px 10px;border-radius:10px;background:#f6fbfc;border:1px solid #eef7fb;cursor:pointer;font-weight:800}
     .person-tab.active{background:linear-gradient(90deg,var(--primary),var(--accent));color:#fff}
     mark{background:rgba(255,235,59,0.45);padding:0 2px;border-radius:2px}
@@ -145,16 +144,19 @@
     </main>
   </div>
 
-  <!-- Detail modal with add-person behavior (requires login to add) -->
+  <!-- Detail modal with restored select, edit and delete person options -->
   <div id="detailBackdrop" class="backdrop" style="display:none">
     <div class="modal" role="dialog" aria-modal="true">
       <div style="display:flex;justify-content:space-between;align-items:center;gap:8px">
         <h3 id="detailTitle">تفاصيل السجل</h3>
         <div style="display:flex;gap:8px;align-items:center">
           <div class="person-controls" style="align-items:center">
-            <button id="prevPerson" class="btn-ghost-small" title="الشخص السابق">◀</button>
-            <div id="peopleTabs" class="person-tabs" aria-live="polite" style="min-width:160px"></div>
-            <button id="nextPerson" class="btn-ghost-small" title="الشخص التالي">▶</button>
+            <!-- restored select dropdown showing current person and down arrow -->
+            <select id="personSelect" style="height:44px;border-radius:10px;border:1px solid #eef7fb;padding:8px;background:#f6fbfc;margin-left:6px"></select>
+            <!-- restored edit and delete buttons -->
+            <button id="editPersonToggle" class="btn-ghost-small" title="تعديل الشخص">تعديل الشخص</button>
+            <button id="deletePersonBtn" class="btn-ghost-small" title="حذف شخص" style="color:var(--danger);border-color:rgba(239,68,68,0.12);">حذف شخص</button>
+            <!-- keep the + button -->
             <button id="addPersonBtn" class="btn-ghost-small" title="إضافة شخص">＋</button>
           </div>
           <button id="closeDetailTop" class="btn-ghost" title="إغلاق سريع">إغلاق</button>
@@ -162,12 +164,6 @@
       </div>
 
       <div style="margin-top:12px">
-        <div style="display:flex;gap:8px;align-items:center;margin-bottom:10px">
-          <select id="personSelect" style="flex:1;height:44px;border-radius:8px;border:1px solid #e6eef7;padding:8px"></select>
-          <button id="editPersonToggle" class="btn-ghost-small">تعديل الشخص</button>
-          <button id="deletePersonBtn" class="btn-ghost-small" style="background:transparent;border-color:rgba(239,68,68,0.12);color:var(--danger)">حذف شخص</button>
-        </div>
-
         <div id="personEditArea" style="display:none;border:1px dashed #e6eef7;padding:12px;border-radius:10px;margin-bottom:12px">
           <div class="field"><label>اسم الشخص</label><input id="personNameInput" class="large" placeholder="أدخل اسم الشخص" /></div>
           <div class="field"><label>هاتف</label><input id="personPhoneInput" class="large" /></div>
@@ -216,7 +212,7 @@
             <input id="payAmount" placeholder="مبلغ الدفعة" type="number" style="flex:1;height:48px;padding:8px;border-radius:8px;border:1px solid #e6eef7" />
             <input id="payDate" type="date" style="width:140px;height:48px;padding:8px;border-radius:8px;border:1px solid #e6eef7" />
           </div>
-          <div id="payWarning" class="warning" style="display:none">المبلغ لا يكفي أو أكبر من المتبقي</div>
+          <div id="payWarning" class="warning" style="display:none">المبلغ أكبر من المتبقي</div>
         </div>
 
         <div class="detail-actions" role="toolbar" aria-label="أزرار الإجراء">
@@ -231,83 +227,12 @@
     </div>
   </div>
 
-  <!-- Edit & Auth modals (kept identical to original UI) -->
-  <div id="editBackdrop" class="backdrop" style="display:none">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div style="display:flex;justify-content:space-between;align-items:center">
-        <h3>تعديل السجل</h3>
-        <button id="closeEdit" class="btn-ghost">إغلاق</button>
-      </div>
+  <!-- other modals (edit, auth, register) unchanged -->
+  <div id="editBackdrop" class="backdrop" style="display:none"><div class="modal" role="dialog" aria-modal="true"><div style="display:flex;justify-content:space-between;align-items:center"><h3>تعديل السجل</h3><button id="closeEdit" class="btn-ghost">إغلاق</button></div><div style="margin-top:12px"><div id="editError" class="muted-small" style="display:none;color:var(--danger)"></div><div class="edit-field"><label>اسم العميل</label><input id="editCustName" /></div><div class="edit-field"><label>هاتف العميل</label><input id="editCustPhone" /></div><div class="edit-field"><label>اسم المنتج</label><input id="editProdName" /></div><div class="edit-field"><label>نقد</label><input id="editTotalAmt" type="number" /></div><div class="edit-field"><label>أقساط</label><input id="editOfficialPrice" type="number" /></div><div class="edit-field"><label>الدفعة</label><input id="editDownAmt" type="number" /></div><div class="edit-field"><label>تاريخ الاستحقاق</label><input id="editDueDate" type="date" /></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px"><button id="doSaveEdit" class="btn">حفظ التعديلات</button><button id="doCancelEdit" class="btn-ghost">إلغاء</button></div></div></div></div>
 
-      <div style="margin-top:12px">
-        <div id="editError" class="muted-small" style="display:none;color:var(--danger)"></div>
+  <div id="authBackdrop" class="backdrop" style="display:flex"><div class="modal" role="dialog" aria-modal="true" style="border-radius:12px;max-width:480px;margin:22px;"><div style="display:flex;align-items:center;gap:12px;padding:8px 4px;border-bottom:1px solid #eef7fb"><div class="logo" style="width:46px;height:46px;border-radius:10px;font-size:18px">أق</div><div><div style="font-weight:900">سجّل دخولك</div><div style="font-size:13px;color:var(--muted)">ادخل حسابك لمزامنة البيانات</div></div></div><div style="padding:12px"><div id="authError" class="error" style="display:none;color:var(--danger);margin-bottom:8px"></div><div class="field"><input id="loginEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email" /></div><div class="field" style="margin-top:8px;position:relative"><input id="loginPassword" type="password" placeholder="كلمة المرور" autocomplete="current-password" /><button id="togglePassword" class="btn-ghost-small" style="position:absolute;left:8px;top:8px;padding:6px">👁</button></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><label style="display:flex;gap:8px;align-items:center"><input id="rememberMe" type="checkbox" /> تذكّرني</label><button id="forgotPassword" class="btn-ghost">نسيت كلمة السر؟</button></div><div style="display:flex;gap:8px;margin-top:12px"><button id="doLogin" class="btn" style="flex:1">دخول</button><button id="openRegister" class="btn-ghost" style="flex:1">إنشاء حساب</button></div><div style="margin-top:12px;font-size:13px;color:var(--muted)">سجّل دخولك بحسابك للوصول للبيانات من أي جهاز.</div></div></div></div>
 
-        <div class="edit-field"><label>اسم العميل</label><input id="editCustName" /></div>
-        <div class="edit-field"><label>هاتف العميل</label><input id="editCustPhone" /></div>
-        <div class="edit-field"><label>اسم المنتج</label><input id="editProdName" /></div>
-
-        <div class="edit-field"><label>نقد</label><input id="editTotalAmt" type="number" /></div>
-        <div class="edit-field"><label>أقساط</label><input id="editOfficialPrice" type="number" /></div>
-        <div class="edit-field"><label>الدفعة</label><input id="editDownAmt" type="number" /></div>
-        <div class="edit-field"><label>تاريخ الاستحقاق</label><input id="editDueDate" type="date" /></div>
-
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:8px">
-          <button id="doSaveEdit" class="btn">حفظ التعديلات</button>
-          <button id="doCancelEdit" class="btn-ghost">إلغاء</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div id="authBackdrop" class="backdrop" style="display:flex">
-    <div class="modal" role="dialog" aria-modal="true" style="border-radius:12px;max-width:480px;margin:22px;">
-      <div style="display:flex;align-items:center;gap:12px;padding:8px 4px;border-bottom:1px solid #eef7fb">
-        <div class="logo" style="width:46px;height:46px;border-radius:10px;font-size:18px">أق</div>
-        <div>
-          <div style="font-weight:900">سجّل دخولك</div>
-          <div style="font-size:13px;color:var(--muted)">ادخل حسابك لمزامنة البيانات</div>
-        </div>
-      </div>
-
-      <div style="padding:12px">
-        <div id="authError" class="error" style="display:none;color:var(--danger);margin-bottom:8px"></div>
-        <div class="field"><input id="loginEmail" type="email" placeholder="البريد الإلكتروني" autocomplete="email" /></div>
-        <div class="field" style="margin-top:8px;position:relative">
-          <input id="loginPassword" type="password" placeholder="كلمة المرور" autocomplete="current-password" />
-          <button id="togglePassword" class="btn-ghost-small" style="position:absolute;left:8px;top:8px;padding:6px">👁</button>
-        </div>
-
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px">
-          <label style="display:flex;gap:8px;align-items:center"><input id="rememberMe" type="checkbox" /> تذكّرني</label>
-          <button id="forgotPassword" class="btn-ghost">نسيت كلمة السر؟</button>
-        </div>
-
-        <div style="display:flex;gap:8px;margin-top:12px">
-          <button id="doLogin" class="btn" style="flex:1">دخول</button>
-          <button id="openRegister" class="btn-ghost" style="flex:1">إنشاء حساب</button>
-        </div>
-
-        <div style="margin-top:12px;font-size:13px;color:var(--muted)">سجّل دخولك بحسابك للوصول للبيانات من أي جهاز.</div>
-      </div>
-    </div>
-  </div>
-
-  <div id="registerBackdrop" class="backdrop" style="display:none">
-    <div class="modal" role="dialog" aria-modal="true">
-      <div style="padding:12px">
-        <div id="regError" class="error" style="display:none"></div>
-        <div id="regInfo" class="info" style="display:none"></div>
-        <div class="field"><label for="regEmail">البريد الإلكتروني</label><input id="regEmail" type="email" placeholder="example@domain.com" autocomplete="email" /></div>
-        <div class="field"><label for="regDisplayName">اسم العرض</label><input id="regDisplayName" placeholder="الاسم الذي سيظهر" /></div>
-        <div class="field"><label for="regPassword">كلمة المرور</label><input id="regPassword" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" /></div>
-        <div class="field"><label for="regPassword2">تأكيد كلمة المرور</label><input id="regPassword2" type="password" placeholder="أعد إدخال كلمة المرور" /></div>
-        <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px">
-          <button id="closeRegister" class="btn-ghost">إلغاء</button>
-          <button id="doRegister" class="btn">إنشاء الحساب</button>
-        </div>
-      </div>
-    </div>
-  </div>
+  <div id="registerBackdrop" class="backdrop" style="display:none"><div class="modal" role="dialog" aria-modal="true"><div style="padding:12px"><div id="regError" class="error" style="display:none"></div><div id="regInfo" class="info" style="display:none"></div><div class="field"><label for="regEmail">البريد الإلكتروني</label><input id="regEmail" type="email" placeholder="example@domain.com" autocomplete="email" /></div><div class="field"><label for="regDisplayName">اسم العرض</label><input id="regDisplayName" placeholder="الاسم الذي سيظهر" /></div><div class="field"><label for="regPassword">كلمة المرور</label><input id="regPassword" type="password" placeholder="كلمة المرور (6 أحرف على الأقل)" /></div><div class="field"><label for="regPassword2">تأكيد كلمة المرور</label><input id="regPassword2" type="password" placeholder="أعد إدخال كلمة المرور" /></div><div style="display:flex;gap:8px;justify-content:flex-end;margin-top:6px"><button id="closeRegister" class="btn-ghost">إلغاء</button><button id="doRegister" class="btn">إنشاء الحساب</button></div></div></div></div>
 
   <div id="toast" class="toast" aria-live="polite" style="opacity:0"></div>
 
@@ -346,7 +271,7 @@
     // Local state
     const KEY='debt_app_v_mobile';
     function loadLocal(){ try{return JSON.parse(localStorage.getItem(KEY)||'[]')}catch(e){return[]} }
-    function saveLocal(recordsToSave){ localStorage.setItem(KEY, JSON.stringify(recordsToSave)); }
+    function saveLocal(v){ localStorage.setItem(KEY, JSON.stringify(v)); }
     let records = loadLocal();
     let currentUser = null;
     let activeDetailId = null;
@@ -355,7 +280,6 @@
     let cloudUnsub = null;
     let _pendingSave = null;
 
-    // Utilities for cloud merge / timestamps
     function tsToMillis(t){ if(!t) return 0; if(typeof t === 'number') return t; if(typeof t === 'string'){ const p = Date.parse(t); return isNaN(p)?0:p; } if(typeof t.toMillis === 'function'){ try{ return t.toMillis(); }catch(e){ return 0; } } return 0; }
     function mergeRecords(local, cloud){
       const map = new Map();
@@ -372,7 +296,6 @@
       return Array.from(map.values()).sort((a,b)=> (b.createdAt||'').localeCompare(a.createdAt||''));
     }
 
-    // Cloud sync
     function scheduleCloudSave(){ if(_pendingSave) clearTimeout(_pendingSave); _pendingSave = setTimeout(()=> writeCloud(), 700); }
     async function writeCloud(){ if(!auth.currentUser) return; const ref = db.doc('users/' + auth.currentUser.uid); try{ await ref.set({ profile:{ displayName: auth.currentUser.displayName || auth.currentUser.email }, records: records, updatedAt: firebase.firestore.FieldValue.serverTimestamp() }, { merge: true }); }catch(e){ console.error(e); } }
     function startCloudListener(uid){ stopCloudListener(); const ref = db.doc('users/' + uid); cloudUnsub = ref.onSnapshot(snap=>{ if(!snap.exists) return; const data = snap.data() || {}; const cloud = data.records || []; records = mergeRecords(records || [], cloud || []); saveLocal(records); renderLists(); }, err=>console.error(err)); }
@@ -390,7 +313,6 @@
       }catch(err){ console.error('sync error', err); if(showToastOnSuccess) showToast('فشل المزامنة'); return false; }
     }
 
-    // Data helpers
     function ensurePeopleOnRecord(rec){
       if(!rec) return;
       if(!rec.people || !Array.isArray(rec.people) || rec.people.length === 0){
@@ -412,7 +334,6 @@
 
     function isOverdueBy30(record){
       if(!record || !record.dueDate) {
-        // if people exist, check any person's due
         if(record && record.people && Array.isArray(record.people)){
           return record.people.some(p=>{
             if(!p.dueDate) return false;
@@ -497,7 +418,7 @@
       }
     }
 
-    /* ===== Render lists ===== */
+    // Render lists
     function renderLists(){
       const q = ($('search').value||'').trim();
       const tokens = getSearchTokens(q);
@@ -603,7 +524,7 @@
       if(action === 'edit'){ openEdit(id); return; }
     });
 
-    // Add record — requires login (like original)
+    // Add record (requires login)
     $('btnAdd').addEventListener('click', async ()=>{
       if(!currentUser){ $('authBackdrop').style.display='flex'; showToast('سجل الدخول أولاً'); return; }
       const cust = $('custName').value.trim();
@@ -647,18 +568,10 @@
       showToast('تمت الإضافة');
     });
 
-    // People / detail functions (add-person requires login)
+    // People/detail handlers
     function renderPeopleTabsForRecord(rec){
-      const tabs = $('peopleTabs'); if(!tabs) return;
-      tabs.innerHTML='';
       const sel = $('personSelect'); if(!sel) return; sel.innerHTML='';
       (rec.people||[]).forEach((p, idx)=>{
-        const div = document.createElement('div');
-        div.className = 'person-tab' + (idx === activePersonIndex ? ' active' : '');
-        div.textContent = p.customerName || ('شخص ' + (idx+1));
-        div.dataset.idx = idx;
-        div.addEventListener('click', ()=> selectPerson(rec.id, Number(div.dataset.idx)));
-        tabs.appendChild(div);
         const opt = document.createElement('option');
         opt.value = idx; opt.textContent = p.customerName || ('شخص ' + (idx+1));
         sel.appendChild(opt);
@@ -670,8 +583,9 @@
       const rec = records.find(r=> r.id === recordId);
       if(!rec || !rec.people || !rec.people[idx]) return;
       activePersonIndex = idx;
-      renderPeopleTabsForRecord(rec);
       renderPersonDetails(rec, rec.people[idx]);
+      // keep select in sync
+      const sel = $('personSelect'); if(sel) sel.value = idx;
     }
 
     function renderPersonDetails(rec, person){
@@ -745,12 +659,9 @@
         };
       }
 
-      if($('prevPerson')) $('prevPerson').onclick = ()=> selectPerson(r.id, Math.max(0, activePersonIndex-1));
-      if($('nextPerson')) $('nextPerson').onclick = ()=> selectPerson(r.id, Math.min(r.people.length-1, activePersonIndex+1));
-
       if($('editPersonToggle')) $('editPersonToggle').onclick = ()=>{
         const area = $('personEditArea');
-        if(area.style.display === 'none'){
+        if(area.style.display === 'none' || area.style.display === ''){
           isAddingPerson = false;
           const p = r.people[activePersonIndex];
           $('personNameInput').value = p.customerName || '';
@@ -791,7 +702,7 @@
           isAddingPerson = false;
           activePersonIndex = recx.people.length - 1;
           renderPeopleTabsForRecord(recx);
-          selectPerson(recx.id, activePersonIndex);
+          renderPersonDetails(recx, recx.people[activePersonIndex]);
           $('personEditArea').style.display = 'none';
           renderLists();
           showToast('أضيف شخص جديد');
@@ -807,7 +718,6 @@
           saveLocal(records);
           scheduleCloudSave();
           $('personEditArea').style.display = 'none';
-          renderPeopleTabsForRecord(recx);
           renderPersonDetails(recx, p);
           renderLists();
           showToast('تم حفظ بيانات الشخص');
@@ -826,16 +736,10 @@
         saveLocal(records);
         scheduleCloudSave();
         renderPeopleTabsForRecord(recx);
-        selectPerson(recx.id, activePersonIndex);
+        renderPersonDetails(recx, recx.people[activePersonIndex]);
         renderLists();
         showToast('حُذف الشخص');
       };
-
-      if($('closeDetailTop')) $('closeDetailTop').onclick = ()=> { $('detailBackdrop').style.display = 'none'; isAddingPerson = false; };
-      if($('closeDetailBottom')) $('closeDetailBottom').onclick = ()=> { $('detailBackdrop').style.display = 'none'; isAddingPerson = false; };
-
-      $('deleteRec').onclick = ()=>{ if(!confirm('هل تريد حذف السجل نهائياً؟')) return; records = records.filter(rr=> rr.id !== activeDetailId); saveLocal(records); scheduleCloudSave(); $('detailBackdrop').style.display = 'none'; renderLists(); showToast('تم حذف السجل'); };
-      $('editFromDetail').onclick = ()=> openEdit(id);
 
       $('savePay').onclick = ()=>{
         const amt = parseFloat($('payAmount').value); if(isNaN(amt)||amt<=0){ alert('أدخل مبلغاً صحيحاً'); return; }
@@ -859,7 +763,7 @@
       if(focusPay) setTimeout(()=> $('payAmount').focus(),160);
     }
 
-    // Edit modal handlers
+    // Edit modal (simpler)
     let editingId = null;
     function openEdit(id){
       const r = records.find(x=> x.id === id); if(!r) return;
@@ -899,7 +803,7 @@
       showToast('تم حفظ التعديلات');
     });
 
-    // Auth & registration (UI unchanged)
+    // Auth handlers (UI unchanged)
     $('togglePassword').addEventListener('click', ()=>{ const p = $('loginPassword'); p.type = p.type === 'password' ? 'text' : 'password'; $('togglePassword').textContent = p.type === 'password' ? '👁' : '🙈'; });
     $('rememberMe').addEventListener('change', (e)=>{ const mode = e.target.checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; auth.setPersistence(mode).catch(()=>{}); });
 
@@ -912,97 +816,4 @@
       showAuthError('');
       const email = $('loginEmail').value.trim(), pass = $('loginPassword').value;
       if(!email || !pass){ showAuthError('أكمل الحقول أولاً'); return; }
-      const btn = $('doLogin'); const prev = btn.textContent; btn.textContent = '...جارٍ الدخول'; btn.disabled = true;
-      try{
-        try { const mode = $('rememberMe') && $('rememberMe').checked ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION; await auth.setPersistence(mode); }catch(e){ console.warn('setPersistence failed', e); }
-        await auth.signInWithEmailAndPassword(email, pass);
-        showToast('تم تسجيل الدخول');
-      }catch(err){
-        console.error('signIn error', err);
-        showAuthError((err.code||'') + ' — ' + (err.message||'فشل تسجيل الدخول'));
-      }finally{ btn.disabled = false; btn.textContent = prev; }
-    });
-
-    $('openRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'flex'; $('authBackdrop').style.display = 'none'; });
-    $('closeRegister').addEventListener('click', ()=> { $('registerBackdrop').style.display = 'none'; $('authBackdrop').style.display = 'flex'; });
-
-    $('doRegister').addEventListener('click', async ()=>{
-      showRegError(''); showRegInfo('');
-      const email = $('regEmail').value.trim(); const display = $('regDisplayName').value.trim(); const pass = $('regPassword').value; const pass2 = $('regPassword2').value;
-      if(!email || !pass || !pass2){ showRegError('أكمل جميع الحقول'); return; }
-      if(pass.length < 6){ showRegError('كلمة السر يجب أن تكون 6 أحرف على الأقل'); return; }
-      if(pass !== pass2){ showRegError('كلمة السر وتأكيدها غير متطابقين'); return; }
-      const btn = $('doRegister'); btn.disabled = true; const prev = btn.textContent; btn.textContent = '...جارٍ الإنشاء';
-      try{
-        if(location.protocol === 'file:'){ showRegError('لا يمكن إنشاء حساب عند فتح الملف محلياً. استضف الملف أولاً.'); return; }
-        const cred = await auth.createUserWithEmailAndPassword(email, pass);
-        if(cred && cred.user && display){ try{ await cred.user.updateProfile({ displayName: display }); }catch(e){ console.warn('updateProfile', e); } }
-        showRegInfo('تم إنشاء الحساب وتسجيل الدخول');
-        setTimeout(()=>{ $('registerBackdrop').style.display = 'none'; $('authBackdrop').style.display = 'none'; }, 700);
-      }catch(err){
-        console.error(err);
-        showRegError((err.code||'') + ' — ' + (err.message||'فشل الإنشاء'));
-      }finally{ btn.disabled = false; btn.textContent = prev; }
-    });
-
-    $('forgotPassword').addEventListener('click', async ()=>{ const email = $('loginEmail').value.trim() || prompt('أدخل بريدك لإرسال رابط إعادة التعيين:'); if(!email){ showAuthError('أدخل البريد أولاً'); return; } try{ await auth.sendPasswordResetEmail(email); showToast('أُرسل رابط إعادة تعيين كلمة السر'); }catch(err){ console.error(err); showAuthError(err.message||'فشل إرسال الرابط'); } });
-
-    $('btnLogout').addEventListener('click', async ()=>{ if(!confirm('تسجيل خروج؟')) return; try{ await auth.signOut(); showToast('تم تسجيل الخروج'); }catch(e){ console.error(e); showToast('خطأ'); } });
-
-    function showActiveTab(){ $('tabActive').classList.add('active'); $('tabOverdue').classList.remove('active'); $('listActive').style.display='block'; $('listOverdue').style.display='none'; }
-    function showOverdueTab(){ $('tabOverdue').classList.add('active'); $('tabActive').classList.remove('active'); $('listOverdue').style.display='block'; $('listActive').style.display='none'; }
-    $('tabActive').addEventListener('click', showActiveTab); $('tabOverdue').addEventListener('click', showOverdueTab);
-
-    auth.onAuthStateChanged(async (user)=>{
-      if(user){
-        currentUser = { uid:user.uid, email:user.email, name:user.displayName || (user.email||'').split('@')[0] };
-        $('userPill').textContent = currentUser.name;
-        $('btnLogout').style.display = 'inline-block';
-        $('btnOpenAuth').style.display = 'none';
-        $('authBackdrop').style.display = 'none';
-        $('mainPanel').style.display = 'block';
-        startCloudListener(user.uid);
-        await syncWithCloud(false);
-      } else {
-        currentUser = null;
-        $('userPill').textContent = 'غير مسجل';
-        $('btnLogout').style.display = 'none';
-        $('btnOpenAuth').style.display = 'inline-block';
-        $('authBackdrop').style.display = 'flex';
-        $('mainPanel').style.display = 'none';
-        stopCloudListener();
-      }
-      renderLists();
-    });
-
-    // initial wiring
-    document.addEventListener('DOMContentLoaded', ()=>{
-      const debouncedRender = (fn, wait=120)=>{ let h=null; return function(){ if(h) clearTimeout(h); h=setTimeout(()=>{ fn(); h=null; }, wait); }; };
-      $('search')?.addEventListener('input', debouncedRender(renderLists));
-      $('searchBtn')?.addEventListener('click', renderLists);
-      renderLists();
-    });
-
-    window.addEventListener('storage', (e)=>{ if(e.key === KEY){ records = loadLocal(); renderLists(); } });
-
-    document.querySelectorAll('.backdrop').forEach(b => {
-      b.addEventListener('click', (e)=>{
-        if(e.target !== b) return;
-        if(b.id === 'authBackdrop') return;
-        b.style.display = 'none';
-      });
-      b.querySelectorAll('.modal').forEach(m => m.addEventListener('click', ev => ev.stopPropagation()));
-    });
-
-    document.addEventListener('keydown', (e)=>{
-      if(e.key === 'Escape'){
-        if($('detailBackdrop') && $('detailBackdrop').style.display === 'flex') $('detailBackdrop').style.display = 'none';
-        if($('registerBackdrop') && $('registerBackdrop').style.display === 'flex') $('registerBackdrop').style.display = 'none';
-        if($('editBackdrop') && $('editBackdrop').style.display === 'flex') { $('editBackdrop').style.display = 'none'; }
-      }
-    });
-
-    setTimeout(()=> { if($('loginEmail')) $('loginEmail').focus(); }, 400);
-  </script>
-</body>
-</html>
+      const btn = $('doLogin'); const prev = btn.textContent; btn.t
